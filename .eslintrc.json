@@ -1,0 +1,23 @@
+{
+    "parser": "babel-eslint",
+    "extends": ["airbnb-base", "prettier"],
+    "env": {
+        "node": true,
+        "browser": true,
+        "es6": true,
+        "jest": true
+    },
+    "rules": {
+        "indent": ["error", 2],
+        "implicit-arrow-linebreak": "off",
+        "import/extensions": { "jes": "never", "json": "never" },
+        "import/no-extreneous-dependencies": [
+            "error",
+            {
+                "devDependencies": true
+            }
+        ],
+        "no-unsused-expressions": 0,
+        "function-paren-newline": 0
+    }
+} 
