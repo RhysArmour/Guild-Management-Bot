@@ -5,7 +5,6 @@ const { sequelize } = require('./sequelize');
 const guildDb = sequelize.define('guildDb', {
   Name: {
     type: Sequelize.STRING,
-    unique: true,
   },
   Strikes: {
     type: Sequelize.INTEGER,

@@ -7,8 +7,13 @@ const { sequelize } = require('./src/utils/database/sequelize');
 const { guildDb } = require('./src/utils/database/guild-db');
 const { botDb } = require('./src/utils/database/bot-db');
 const { strikeMessage } = require('./src/services/strike-sorting');
-const { clientId, guildId, token } = require('./config/config.json');
+// const { clientId, token } = require('./config/config.json');
 const { addThreeStrikeRole } = require('./src/services/move-room');
+
+const keep_alive = require('./keep_alive')
+const token = process.env['token']
+const clientId = process.env['clientId']
+
 
 const client = new Client({
   intents: [
@@ -17,11 +22,10 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
-const PREFIX = ':';
 
-sequelize.sync().then(() => console.log('database is ready'));
-guildDb.sync().then(() => console.log('guildDb is ready'));
-botDb.sync().then(() => console.log('botDb is ready'));
+sequelize.sync().then(() => console.info('database is ready'));
+guildDb.sync().then(() => console.info('guildDb is ready'));
+botDb.sync().then(() => console.info('botDb is ready'));
 
 // Commands
 const commandFiles = fs
@@ -40,43 +44,27 @@ for (const file of commandFiles) {
   client.commands.set(command.data.name, command);
 }
 
-const eventFiles = fs
-  .readdirSync('./src/events')
-  .filter((file) => file.endsWith('.js'));
-
-for (const file of eventFiles) {
-  const event = require(`./src/events/${file}`);
-  if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args));
-  } else {
-    client.on(event.name, (...args) => event.execute(...args));
-  }
-}
-// Client
-
 client.once('ready', () => {
-  console.log(`Ready! Logged in as ${client.user.tag}`);
-
-  const CLIENT_ID = clientId;
+  console.info(`Ready! Logged in as ${client.user.tag}`);
 
   const rest = new REST({ version: '9' }).setToken(token);
 
   const deployCommands = async () => {
     try {
       if (process.env.ENV === 'production') {
-        await rest.put(Routes.applicationCommand(CLIENT_ID)),
+        await rest.put(Routes.applicationCommand(clientId)),
           {
             body: commands,
           };
-        console.log('successfully registered commands globally');
+        console.info('successfully registered commands globally');
       } else {
-        await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+        await rest.put(Routes.applicationCommands(clientId), {
           body: commands,
         });
-        console.log('successfully registered commands locally');
+        console.info('successfully registered commands Globally');
       }
     } catch (error) {
-      if (error) console.log(error);
+      if (error) console.error(error);
     }
   };
   deployCommands();
@@ -84,7 +72,7 @@ client.once('ready', () => {
 
 // Command Alert
 client.on('interactionCreate', (interaction) => {
-  console.log(
+  console.info(
     `${interaction.user.tag} in #${interaction.channel.name} triggered an interaction.`,
   );
 });
@@ -117,11 +105,13 @@ client.on('messageCreate', async (message) => {
   });
 
   if (message.content.includes(triggerMessage?.Value) && message.author.username !== client.user.username ) {
+    console.info(`Trigger Message Found For ${message.guild.name}`)
     const offenseRecord = await botDb.findOne({
-      where: { Name: 'Ticket Offense Channel' },
+      where: { Name: 'Ticket Offense Channel', ServerId: serverId },
     });
 
     if (message.channel.id !== offenseRecord.UniqueId && offenseRecord.UniqueId === null) {
+      console.warn(`Offense and Strike channels are not set for ${message.guild.name}`)
       message.reply('You must set Offense Channel and Strike Channel before issuing strikes')
     } else if (message.channel.id !== offenseRecord.UniqueId) {
       return;
@@ -135,12 +125,11 @@ client.on('messageCreate', async (message) => {
       strikeChannel.send(replyMessage);
       return;
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }}
-    if (message.channel.id === strikeRecord.UniqueId) {
+    if (message.channel.id === strikeRecord?.UniqueId) {
       const strikeLimit = ':x::x::x:'
       if (message.content.includes(strikeLimit)) {
-        console.log('HAS STRIKE LIMIT')
         addThreeStrikeRole(message)
       }
     }
@@ -148,4 +137,4 @@ client.on('messageCreate', async (message) => {
 
 //end of file
 
-client.login(process.env.DISCORDJS_BOT_TOKEN);
+client.login(token);
