@@ -1,7 +1,9 @@
 const { botDb } = require('../utils/database/bot-db')
 
 const channelSetup = async (interaction) => {
+  console.log('Channel Setup')
   const serverId = interaction.guild.id;
+  console.log('SERVERID', serverId)
 
   const duplicateChannel = await botDb.findOne({
     where: { Name: 'Ticket Offense Channel', ServerId: serverId },
@@ -44,8 +46,10 @@ const channelSetup = async (interaction) => {
 };
 
 const awayRoleSetup = async (interaction) => {
+  console.log('Away Role Setup')
   const awayRole = interaction.options.getRole('awayrole');
   const serverId = interaction.guild.id;
+  console.log('SERVERID', serverId)
 
   const duplicateAwayRole = await botDb.findOne({
     where: { Name: 'Away Role', ServerId: serverId },
@@ -76,8 +80,11 @@ const awayRoleSetup = async (interaction) => {
 };
 
 const threeStrikeRoleSetup = async (interaction) => {
+  console.log('Three Strike Role Setup')
     const threeStrikeRole = interaction.options.getRole('3strikerole');
     const serverId = interaction.guild.id;
+
+    console.log('SERVERID', serverId)
   
     const duplicateThreeStrikeRole = await botDb.findOne({
       where: { Name: '3 Strike Role', ServerId: serverId },
@@ -108,11 +115,11 @@ const threeStrikeRoleSetup = async (interaction) => {
   };
 
 const triggerSetup = async (interaction) => {
+  console.log('Trigger Setup')
   const alert = interaction.options.getString('triggerphrase');
   const serverId = interaction.guild.id;
-
-  console.log(alert);
-
+  console.log('SERVERID', serverId)
+  
   const duplicateTrigger = await botDb.findOne({
     where: { Name: 'Trigger Message', ServerId: serverId },
   });

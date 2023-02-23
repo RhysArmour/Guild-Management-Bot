@@ -7,6 +7,7 @@ const { Collection } = require('discord.js');
 const { botDb } = require('../utils/database/bot-db');
 
 const isolateTags = (message) => {
+  console.log('Isolating Tags')
   let listOfOffenders = message.mentions.users.map((user) => user.id);
   for (i in listOfOffenders) {
     listOfOffenders[i] = '<@' + listOfOffenders + '>';
@@ -15,6 +16,7 @@ const isolateTags = (message) => {
 };
 
 const isolateTickets = (message) => {
+  console.log('Isolating Tickets')
   const re = new RegExp(
     /([(])([0-9]|[1-9][0-9]|[1-4][0-9][0-9])([/])([5][0][0])([)])/g,
   );
@@ -23,6 +25,7 @@ const isolateTickets = (message) => {
 };
 
 const strikeMessage = async (message) => {
+  console.log('Beggining strikeMessage')
   const tags = isolateTags(message);
   const serverId = message.guild.id
   const roleName = await botDb.findOne({where: {Name: 'Away Role', ServerId: serverId}})
@@ -32,12 +35,13 @@ const strikeMessage = async (message) => {
   let reply = `Strikes for ${day} ${month}: \n\n`;
   let awayReply = `The following Members are excused due to being ${roleName.Value}: \n\n`
   if (day === '1') {
+    console.log('Resetting Monthly Strikes')
+    message.reply('1st of the month, Resetting monthly strikes.')
     const numberOfIds = await guildDb.count({where: {ServerId: serverId}});
     const ids = Array.from({ length: numberOfIds }, (_, index) => index + 1);
     for await (i of ids) {
-      await guildDb.update({ strikes: 0 }, { where: { id: i } });
+      await guildDb.update({ strikes: 0 }, { where: { id: i }});
     }
-    return;
   }
 
   try {
