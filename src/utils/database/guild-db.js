@@ -32,18 +32,16 @@ const checkRoomsAreAssigned = async (serverId) => {
     const reply = 'You must set Offense Channel and Strike Channel before issuing strikes.'
     return reply
   }
-  return
+  return true
 }
 
 const assignStrikes = async (user, serverId) => {
-  const roomsAssigned = await checkRoomsAreAssigned(serverId)
-  if (typeof roomsAssigned === 'string') {
-    return roomsAssigned
-  };
   const duplicate = await guildDb.findOne({
     where: {  Name: user.username, UniqueId: user.id, ServerId: serverId  },
   });
+  console.log('DUPLICATE', duplicate)
   if (!duplicate) {
+    console.log('CREATING ENTRY')
     return guildDb.create({
       Name: user.username,
       Strikes: 1,
@@ -57,6 +55,7 @@ const assignStrikes = async (user, serverId) => {
 };
 
 const updateStrike = async (user, serverId) => {
+  console.log('UPDATE STRIKES FOR', user)
   await guildDb.increment('Strikes', { by: 1, where: { Name: user.username, UniqueId: user.id, ServerId: serverId }});
   await guildDb.increment('TotalStrikes', { by: 1, where: { Name: user.username, UniqueId: user.id, ServerId: serverId }});
   return guildDb.findOne({ where: {Name: user.username, UniqueId: user.id, ServerId: serverId}});
@@ -76,4 +75,5 @@ module.exports = {
   assignStrikes,
   updateStrike,
   getStrikes,
+  checkRoomsAreAssigned,
 };

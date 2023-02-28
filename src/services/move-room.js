@@ -1,6 +1,9 @@
 const {
+  getStrikes,
   guildDb,
+  assignStrikes,
 } = require('../utils/database/guild-db');
+const { Collection } = require('discord.js');
 const { botDb } = require('../utils/database/bot-db');
 
 const isolateTags = (message) => {
