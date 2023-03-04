@@ -17,7 +17,6 @@ const addThreeStrikeRole = async (message) => {
   let reply = 'The following members has attained 3 strikes:\n\n'
 
   for (i in users) {
-      console.log(i)
       let user = message.mentions.users.first(i + 1)[i]
       let member = message.mentions.members.first(i + 1)[i]
       let userProfile = await guildDb.findOne({where: {Name: user.username, UniqueId: user.id, ServerId: serverId}})

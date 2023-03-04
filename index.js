@@ -7,12 +7,12 @@ const { sequelize } = require('./src/utils/database/sequelize');
 const { guildDb } = require('./src/utils/database/guild-db');
 const { botDb } = require('./src/utils/database/bot-db');
 const { strikeMessage } = require('./src/services/strike-sorting');
-// const { clientId, token } = require('./config/config.json');
+const { clientId, token } = require('./config/config.json');
 const { addThreeStrikeRole } = require('./src/services/move-room');
 
-const keep_alive = require('./keep_alive')
-const token = process.env['token']
-const clientId = process.env['clientId']
+// const keep_alive = require('./keep_alive')
+// const token = process.env['token']
+// const clientId = process.env['clientId']
 
 
 const client = new Client({
@@ -23,9 +23,9 @@ const client = new Client({
   ],
 });
 
-sequelize.sync().then(() => console.info('database is ready'));
-guildDb.sync().then(() => console.info('guildDb is ready'));
-botDb.sync().then(() => console.info('botDb is ready'));
+sequelize.sync().then(() => console.log('database is ready'));
+guildDb.sync().then(() => console.log('guildDb is ready'));
+botDb.sync().then(() => console.log('botDb is ready'));
 
 // Commands
 const commandFiles = fs
@@ -45,7 +45,7 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', () => {
-  console.info(`Ready! Logged in as ${client.user.tag}`);
+  console.log(`Ready! Logged in as ${client.user.tag}`);
 
   const rest = new REST({ version: '9' }).setToken(token);
 
@@ -53,18 +53,18 @@ client.once('ready', () => {
     try {
       if (process.env.ENV === 'production') {
         await rest.put(Routes.applicationCommand(clientId)),
-          {
-            body: commands,
-          };
-        console.info('successfully registered commands globally');
+        {
+          body: commands,
+        };
+        console.log('successfully registered commands globally');
       } else {
         await rest.put(Routes.applicationCommands(clientId), {
           body: commands,
         });
-        console.info('successfully registered commands Globally');
+        console.log('successfully registered commands Globally');
       }
     } catch (error) {
-      if (error) console.error(error);
+      if (error) console.log(error);
     }
   };
   deployCommands();
@@ -72,7 +72,7 @@ client.once('ready', () => {
 
 // Command Alert
 client.on('interactionCreate', (interaction) => {
-  console.info(
+  console.log(
     `${interaction.user.tag} in #${interaction.channel.name} triggered an interaction.`,
   );
 });
@@ -99,41 +99,47 @@ client.on('interactionCreate', async (interaction) => {
 // Message Response
 client.on('messageCreate', async (message) => {
   const serverId = message.guild.id
-  const triggerMessage = await botDb.findOne({where: {Name: 'Trigger Message', ServerId: message.guild.id}})
+  console.log(`${message.author.username} sent a message in ${message.guild.name}`)
+
+  const triggerMessage = await botDb.findOne({ where: { Name: 'Trigger Message', ServerId: message.guild.id } })
+  
   const strikeRecord = await botDb.findOne({
     where: { Name: 'Strike Channel', ServerId: serverId },
   });
+  
+  if (message.content.includes(triggerMessage?.Value)) {
 
-  if (message.content.includes(triggerMessage?.Value) && message.author.username !== client.user.username ) {
-    console.info(`Trigger Message Found For ${message.guild.name}`)
     const offenseRecord = await botDb.findOne({
       where: { Name: 'Ticket Offense Channel', ServerId: serverId },
     });
 
     if (message.channel.id !== offenseRecord.UniqueId && offenseRecord.UniqueId === null) {
-      console.warn(`Offense and Strike channels are not set for ${message.guild.name}`)
       message.reply('You must set Offense Channel and Strike Channel before issuing strikes')
     } else if (message.channel.id !== offenseRecord.UniqueId) {
       return;
     }
     try {
       const strikeChannel = client.channels.cache.find(
-        (strikeChannel) => strikeChannel.name === strikeRecord.Value,
+        (strikeChannel) => strikeChannel.id === strikeRecord.UniqueId,
       );
-      message.reply('Processing Strikes, Please wait');
+      const offenseChannel = client.channels.cache.find(
+        (offenseChannel) => offenseChannel.id === offenseRecord.UniqueId,
+      );
+      offenseChannel.send('Processing Strikes, Please wait');
       const replyMessage = await strikeMessage(message);
       strikeChannel.send(replyMessage);
       return;
     } catch (error) {
-      console.error(error);
-    }}
-    if (message.channel.id === strikeRecord?.UniqueId) {
-      const strikeLimit = ':x::x::x:'
-      if (message.content.includes(strikeLimit)) {
-        addThreeStrikeRole(message)
-      }
+      console.log(error);
     }
-  });
+  }
+  if (message.channel.id === strikeRecord?.UniqueId) {
+    const strikeLimit = ':x::x::x:'
+    if (message.content.includes(strikeLimit)) {
+      addThreeStrikeRole(message)
+    }
+  }
+});
 
 //end of file
 
