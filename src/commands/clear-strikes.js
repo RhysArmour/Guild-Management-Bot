@@ -23,28 +23,9 @@ module.exports = {
     const name = user?.username;
     const serverId = interaction.guild.id;
     const integer = interaction.options.getInteger('amount');
-    const bool = interaction.options.getBoolean('all');
 
     try {
-      if (bool) {
-        const numberOfIds = await guildDb.count({
-          where: { ServerId: serverId },
-        });
-
-        const ids = Array.from(
-          { length: numberOfIds },
-          (_, index) => index + 1,
-        );
-        for await (i of ids) {
-          await guildDb.update(
-            { Strikes: 0 },
-            { where: { id: i }, ServerId: serverId },
-          );
-        }
-        await interaction.reply('All strikes cleared');
-        return;
-      }
-      if ((user && integer) || (user && integer && bool === false)) {
+      if (user && integer) {
         const result = await guildDb.findOne({
           where: { Name: user.username, UniqueId: user.id, ServerId: serverId },
         });
@@ -61,7 +42,7 @@ module.exports = {
         const strikes = result.Strikes - integer;
         if (strikes < 0) {
           await interaction.reply(
-            `Cannot remove more strikes than a member has. Current strikes for ${user} is ${result.strikes} therefore you can only remove a maximum of ${result.strikes} `,
+            `Cannot remove more strikes than a member has. Current strikes for ${user} is ${result.Strikes} therefore you can only remove a maximum of ${result.Strikes} `,
           );
           return;
         }
@@ -77,7 +58,7 @@ module.exports = {
           },
         );
         await interaction.reply(
-          `${integer} strikes have been removed from ${user.username}`,
+          `${integer} strike(s) have been removed from ${user.username}`,
         );
         return;
       }

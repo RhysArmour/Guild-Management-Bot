@@ -99,7 +99,7 @@ client.on('interactionCreate', async (interaction) => {
 // Message Response
 client.on('messageCreate', async (message) => {
   const serverId = message.guild.id
-  console.log(message.author.id)
+  console.log(`${message.author.username} sent a message in ${message.guild.name}`)
 
   const triggerMessage = await botDb.findOne({ where: { Name: 'Trigger Message', ServerId: message.guild.id } })
   
@@ -107,11 +107,7 @@ client.on('messageCreate', async (message) => {
     where: { Name: 'Strike Channel', ServerId: serverId },
   });
   
-  console.log('PRE IF STATMENT FOR TRIGGER')
-  
   if (message.content.includes(triggerMessage?.Value)) {
-    
-    console.log('IN IF STATEMENT FOR TRIGGER')
 
     const offenseRecord = await botDb.findOne({
       where: { Name: 'Ticket Offense Channel', ServerId: serverId },

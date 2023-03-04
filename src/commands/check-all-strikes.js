@@ -8,14 +8,18 @@ module.exports = {
 
   async execute(interaction) {
     const serverId = interaction.guild.id;
-    const numberOfIds = await guildDb.count({ where: { ServerId: serverId } });
-    const ids = Array.from({ length: numberOfIds }, (_, index) => index + 1);
+    console.log('SERVER ID', serverId)
+
+    const guildSearch = await guildDb.findAll({ where: { ServerId: serverId } });
+    console.log(Object.keys(guildSearch))
+
+    // const ids = Array.from({ length: guildSearch }, (_, index) => index + 1);
+
     let reply = 'Here is the list of guild strikes:';
-    for await (i of ids) {
-      let result = await guildDb.findOne({ where: { id: i } });
+    for await (member of guildSearch) {
       reply =
         reply +
-        `\n\n${result.Name}: \nstrikes: ${result.Strikes} \nlifetime strikes: ${result.TotalStrikes}`;
+        `\n\n${member.Name}: \nstrikes: ${member.Strikes} \nlifetime strikes: ${member.TotalStrikes}`;
     }
     await interaction.reply(reply);
   },
