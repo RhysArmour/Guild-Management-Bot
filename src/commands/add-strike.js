@@ -54,7 +54,7 @@ module.exports = {
       const message = `${strike} has been added to ${tag} - ${reason}.\n\n ${user} now has ${strikes} strikes ${strike.repeat(
         strikes,
       )}`;
-      // interaction.guild.channels.cache.get(record.UniqueId).send(message);
+      interaction.guild.channels.cache.get(record.UniqueId).send(message);
       interaction.reply({
         content: `Strike for ${user} has been updated. ${user} now has ${strikes} strikes`,
         ephemeral: true,

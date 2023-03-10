@@ -6,7 +6,7 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { sequelize } = require('./src/utils/database/sequelize');
 const { guildDb } = require('./src/utils/database/guild-db');
 const { botDb } = require('./src/utils/database/bot-db');
-const { strikeMessage } = require('./src/services/strike-sorting');
+const { ticketStrikeMessage } = require('./src/services/strike-sorting');
 const { clientId, token } = require('./config/config.json');
 const { addThreeStrikeRole } = require('./src/services/move-room');
 
@@ -126,7 +126,7 @@ client.on('messageCreate', async (message) => {
         (offenseChannel) => offenseChannel.id === offenseRecord.UniqueId,
       );
       offenseChannel.send('Processing Strikes, Please wait');
-      const replyMessage = await strikeMessage(message);
+      const replyMessage = await ticketStrikeMessage(message);
       strikeChannel.send(replyMessage);
       return;
     } catch (error) {
