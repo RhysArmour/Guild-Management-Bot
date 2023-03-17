@@ -105,41 +105,59 @@ client.on('messageCreate', async (message) => {
   
   const strikeRecord = await botDb.findOne({
     where: { Name: 'Strike Channel', ServerId: serverId },
-  })
+  });
 
-  
-  // if (message.content.includes(triggerMessage?.Value)) {
+  if (message.author.id === '470635832462540800') {
+    console.log('Message is from Hotbot');
+    const { day, month } = currentDate();
 
-  //   const offenseRecord = await botDb.findOne({
-  //     where: { Name: 'Ticket Offense Channel', ServerId: serverId },
-  //   });
+    const triggerMessage = await botDb.findOne({
+      where: { Name: 'Trigger Message', ServerId: message.guild.id },
+    });
 
-  //   if (message.channel.id !== offenseRecord.UniqueId && offenseRecord.UniqueId === null) {
-  //     message.reply('You must set Offense Channel and Strike Channel before issuing strikes')
-  //   } else if (message.channel.id !== offenseRecord.UniqueId) {
-  //     return;
-  //   }
-  //   try {
-  //     const strikeChannel = client.channels.cache.find(
-  //       (strikeChannel) => strikeChannel.id === strikeRecord.UniqueId,
-  //     );
-  //     const offenseChannel = client.channels.cache.find(
-  //       (offenseChannel) => offenseChannel.id === offenseRecord.UniqueId,
-  //     );
-  //     offenseChannel.send('Processing Strikes, Please wait');
-  //     const replyMessage = await strikeMessage(message);
-  //     strikeChannel.send(replyMessage);
-  //     return;
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
-  // if (message.channel.id === strikeRecord?.UniqueId) {
-  //   const strikeLimit = ':x::x::x:'
-  //   if (message.content.includes(strikeLimit)) {
-  //     addThreeStrikeRole(message)
-  //   }
-  // }
+    const offenseRecord = await botDb.findOne({
+      where: { Name: 'Ticket Offense Channel', ServerId: serverId },
+    });
+
+    const lastStrikeReset = await botDb.findOne({
+      where: { ServerId: serverId, Name: 'LastStrikeReset' },
+    });
+
+    if (day === 1 && (!lastStrikeReset || lastStrikeReset.Value != month)) {
+      console.log(
+        'Day Equals 1 and Last Strike Reset took place last Month. Starting resetMonthly Strikes',
+      );
+      await resetMonthlyStrikes(strikeRecord, client);
+    }
+
+    if (
+      message.content.includes(triggerMessage?.Value) &&
+      message.channelId.toString() === offenseRecord.UniqueId.toString()
+    ) {
+      try {
+        const strikeChannel = client.channels.cache.find(
+          (strikeChannel) => strikeChannel.id === strikeRecord.UniqueId,
+        );
+        const offenseChannel = client.channels.cache.find(
+          (offenseChannel) => offenseChannel.id === offenseRecord.UniqueId,
+        );
+
+        offenseChannel.send('Processing Strikes, Please wait');
+        const replyMessage = await ticketStrikeMessage(message);
+        strikeChannel.send(replyMessage);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+  }
+
+  if (message.channelId.toString() === strikeRecord?.UniqueId.toString()) {
+    const strikeLimit = ':x::x::x:';
+    if (message.content.includes(strikeLimit)) {
+      addThreeStrikeRole(message);
+    }
+  }
 });
 
 //end of file
