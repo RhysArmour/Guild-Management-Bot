@@ -6,14 +6,17 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { sequelize } = require('./src/utils/database/sequelize');
 const { guildDb } = require('./src/utils/database/guild-db');
 const { botDb } = require('./src/utils/database/bot-db');
-const { strikeMessage } = require('./src/services/strike-sorting');
-const { clientId, token } = require('./config/config.json');
+const {
+  ticketStrikeMessage,
+  resetMonthlyStrikes,
+} = require('./src/services/strike-sorting');
+// const { clientId, token } = require('./config/config.json');
 const { addThreeStrikeRole } = require('./src/services/move-room');
+const { currentDate } = require('./src/utils/helpers/get-date');
 
-// const keep_alive = require('./keep_alive')
-// const token = process.env['token']
-// const clientId = process.env['clientId']
-
+const keep_alive = require('./keep_alive')
+const token = process.env['token']
+const clientId = process.env['clientId']
 
 const client = new Client({
   intents: [
@@ -44,7 +47,7 @@ for (const file of commandFiles) {
   client.commands.set(command.data.name, command);
 }
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`Ready! Logged in as ${client.user.tag}`);
 
   const rest = new REST({ version: '9' }).setToken(token);
@@ -53,9 +56,9 @@ client.once('ready', () => {
     try {
       if (process.env.ENV === 'production') {
         await rest.put(Routes.applicationCommand(clientId)),
-        {
-          body: commands,
-        };
+          {
+            body: commands,
+          };
         console.log('successfully registered commands globally');
       } else {
         await rest.put(Routes.applicationCommands(clientId), {
@@ -98,48 +101,70 @@ client.on('interactionCreate', async (interaction) => {
 
 // Message Response
 client.on('messageCreate', async (message) => {
-  const serverId = message.guild.id
-  console.log(`${message.author.username} sent a message in ${message.guild.name}`)
-
-  const triggerMessage = await botDb.findOne({ where: { Name: 'Trigger Message', ServerId: message.guild.id } })
-  
+  console.info(
+    `${message.author.username} sent a message in ${message.guild.name}`,
+  );
+  const serverId = message.guild.id;
   const strikeRecord = await botDb.findOne({
     where: { Name: 'Strike Channel', ServerId: serverId },
   });
-  
-  if (message.content.includes(triggerMessage?.Value)) {
+
+  if (message.author.id === '602437624791040037') {
+    console.log('Message is from Hotbot');
+    const { day, month } = currentDate();
+
+    const triggerMessage = await botDb.findOne({
+      where: { Name: 'Trigger Message', ServerId: message.guild.id },
+    });
 
     const offenseRecord = await botDb.findOne({
       where: { Name: 'Ticket Offense Channel', ServerId: serverId },
     });
 
-    if (message.channel.id !== offenseRecord.UniqueId && offenseRecord.UniqueId === null) {
-      message.reply('You must set Offense Channel and Strike Channel before issuing strikes')
-    } else if (message.channel.id !== offenseRecord.UniqueId) {
-      return;
-    }
-    try {
-      const strikeChannel = client.channels.cache.find(
-        (strikeChannel) => strikeChannel.id === strikeRecord.UniqueId,
+    const lastStrikeReset = await botDb.findOne({
+      where: { ServerId: serverId, Name: 'LastStrikeReset' },
+    });
+
+    if (day === 1 && (!lastStrikeReset || lastStrikeReset.Value != month)) {
+      console.log(
+        'Day Equals 1 and Last Strike Reset took place last Month. Starting resetMonthly Strikes',
       );
-      const offenseChannel = client.channels.cache.find(
-        (offenseChannel) => offenseChannel.id === offenseRecord.UniqueId,
-      );
-      offenseChannel.send('Processing Strikes, Please wait');
-      const replyMessage = await strikeMessage(message);
-      strikeChannel.send(replyMessage);
-      return;
-    } catch (error) {
-      console.log(error);
+      await resetMonthlyStrikes(strikeRecord, client);
     }
+
+    if (
+      message.content.includes(triggerMessage?.Value) &&
+      message.channelId.toString() === offenseRecord.UniqueId.toString()
+    ) {
+      try {
+        const strikeChannel = client.channels.cache.find(
+          (strikeChannel) => strikeChannel.id === strikeRecord.UniqueId,
+        );
+        const offenseChannel = client.channels.cache.find(
+          (offenseChannel) => offenseChannel.id === offenseRecord.UniqueId,
+        );
+
+        offenseChannel.send('Processing Strikes, Please wait');
+        const replyMessage = await ticketStrikeMessage(message);
+        strikeChannel.send(replyMessage);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
   }
-  if (message.channel.id === strikeRecord?.UniqueId) {
-    const strikeLimit = ':x::x::x:'
+
+  if (message.channelId.toString() === strikeRecord?.UniqueId.toString()) {
+    const strikeLimit = ':x::x::x:';
     if (message.content.includes(strikeLimit)) {
-      addThreeStrikeRole(message)
+      addThreeStrikeRole(message);
     }
   }
 });
+
+module.exports = {
+  client,
+};
 
 //end of file
 
