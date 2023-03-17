@@ -109,7 +109,7 @@ client.on('messageCreate', async (message) => {
     where: { Name: 'Strike Channel', ServerId: serverId },
   });
 
-  if (message.author.id === '602437624791040037') {
+  if (message.author.id === '470635832462540800') {
     console.log('Message is from Hotbot');
     const { day, month } = currentDate();
 
