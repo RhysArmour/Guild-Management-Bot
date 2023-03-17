@@ -19,7 +19,6 @@ module.exports = {
         .setDescription('reason for strike')
         .setRequired(true)
         .addChoices(
-          { name: 'Ticket Offense', value: 'Ticket Offense' },
           { name: 'Tb Phase 1 Offense', value: 'Tb Phase 1 Offense' },
           { name: 'Tb Phase 2 Offense', value: 'Tb Phase 2 Offense' },
           { name: 'Tb Phase 3 Offense', value: 'Tb Phase 3 Offense' },
