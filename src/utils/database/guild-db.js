@@ -39,7 +39,6 @@ const assignStrikes = async (user, serverId) => {
   const duplicate = await guildDb.findOne({
     where: {  Name: user.username, UniqueId: user.id, ServerId: serverId  },
   });
-  console.log('DUPLICATE', duplicate)
   if (!duplicate) {
     console.log('CREATING ENTRY')
     return guildDb.create({
@@ -55,7 +54,6 @@ const assignStrikes = async (user, serverId) => {
 };
 
 const updateStrike = async (user, serverId) => {
-  console.log('UPDATE STRIKES FOR', user)
   await guildDb.increment('Strikes', { by: 1, where: { Name: user.username, UniqueId: user.id, ServerId: serverId }});
   await guildDb.increment('TotalStrikes', { by: 1, where: { Name: user.username, UniqueId: user.id, ServerId: serverId }});
   return guildDb.findOne({ where: {Name: user.username, UniqueId: user.id, ServerId: serverId}});
