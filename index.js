@@ -6,7 +6,8 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { sequelize } = require('./src/utils/database/sequelize');
 const { guildDb } = require('./src/utils/database/guild-db');
 const { botDb } = require('./src/utils/database/bot-db');
-const { strikeMessage } = require('./src/services/strike-sorting');
+const { ticketStrikeMessage, resetMonthlyStrikes } = require('./src/services/strike-sorting');
+const { currentDate } = require('./src/utils/helpers/get-date')
 // const { clientId, token } = require('./config/config.json');
 const { addThreeStrikeRole } = require('./src/services/move-room');
 
