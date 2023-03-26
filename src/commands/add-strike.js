@@ -13,30 +13,6 @@ module.exports = {
         .setDescription('User you want to add strikes too')
         .setRequired(true);
     })
-    .addUserOption((option) => {
-      return option
-        .setName('user2')
-        .setDescription('User you want to add strikes too')
-        .setRequired(true);
-    })
-    .addUserOption((option) => {
-      return option
-        .setName('user3')
-        .setDescription('User you want to add strikes too')
-        .setRequired(true);
-    })
-    .addUserOption((option) => {
-      return option
-        .setName('user4')
-        .setDescription('User you want to add strikes too')
-        .setRequired(true);
-    })
-    .addUserOption((option) => {
-      return option
-        .setName('user5')
-        .setDescription('User you want to add strikes too')
-        .setRequired(true);
-    })
     .addStringOption((option) => {
       return option
         .setName('reason')
@@ -58,6 +34,30 @@ module.exports = {
           { name: 'Unique Strike', value: 'Unique Strike' },
         );
     })
+    .addUserOption((option) => {
+      return option
+        .setName('user2')
+        .setDescription('User you want to add strikes too')
+        .setRequired(false);
+    })
+    .addUserOption((option) => {
+      return option
+        .setName('user3')
+        .setDescription('User you want to add strikes too')
+        .setRequired(false);
+    })
+    .addUserOption((option) => {
+      return option
+        .setName('user4')
+        .setDescription('User you want to add strikes too')
+        .setRequired(false);
+    })
+    // .addUserOption((option) => {
+    //   return option
+    //     .setName('user5')
+    //     .setDescription('User you want to add strikes too')
+    //     .setRequired(false);
+    // })
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
 
   async execute(interaction) {

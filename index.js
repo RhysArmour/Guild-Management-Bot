@@ -6,15 +6,17 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const { sequelize } = require('./src/utils/database/sequelize');
 const { guildDb } = require('./src/utils/database/guild-db');
 const { botDb } = require('./src/utils/database/bot-db');
-const { ticketStrikeMessage, resetMonthlyStrikes } = require('./src/services/strike-sorting');
-const { currentDate } = require('./src/utils/helpers/get-date')
-// const { clientId, token } = require('./config/config.json');
+const {
+  ticketStrikeMessage,
+  resetMonthlyStrikes,
+} = require('./src/services/strike-sorting');
+const { currentDate } = require('./src/utils/helpers/get-date');
 const { addThreeStrikeRole } = require('./src/services/move-room');
 
-const keep_alive = require('./keep_alive')
-const token = process.env['token']
-const clientId = process.env['clientId']
-
+// const keep_alive = require('./keep_alive')
+const token = process.env['token'];
+const clientId = process.env['clientId'];
+const guildId = process.env['guildId']
 
 const client = new Client({
   intents: [
@@ -48,21 +50,22 @@ for (const file of commandFiles) {
 client.once('ready', () => {
   console.log(`Ready! Logged in as ${client.user.tag}`);
 
-  const rest = new REST({ version: '9' }).setToken(token);
+  const rest = new REST({ version: '10' }).setToken(token);
 
   const deployCommands = async () => {
     try {
       if (process.env.ENV === 'production') {
         await rest.put(Routes.applicationCommand(clientId)),
-        {
-          body: commands,
-        };
+          {
+            body: commands,
+          };
         console.log('successfully registered commands globally');
       } else {
-        await rest.put(Routes.applicationCommands(clientId), {
+        console.log('Attempting to update commands locally')
+        await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
           body: commands,
         });
-        console.log('successfully registered commands Globally');
+        console.log('successfully registered commands locally');
       }
     } catch (error) {
       if (error) console.log(error);
@@ -99,11 +102,15 @@ client.on('interactionCreate', async (interaction) => {
 
 // Message Response
 client.on('messageCreate', async (message) => {
-  const serverId = message.guild.id
-  console.log(`${message.author.username} sent a message in ${message.guild.name}`)
+  const serverId = message.guild.id;
+  console.log(
+    `${message.author.username} sent a message in ${message.guild.name}`,
+  );
 
-  const triggerMessage = await botDb.findOne({ where: { Name: 'Trigger Message', ServerId: message.guild.id } })
-  
+  const triggerMessage = await botDb.findOne({
+    where: { Name: 'Trigger Message', ServerId: message.guild.id },
+  });
+
   const strikeRecord = await botDb.findOne({
     where: { Name: 'Strike Channel', ServerId: serverId },
   });
@@ -150,7 +157,6 @@ client.on('messageCreate', async (message) => {
         console.log(error);
       }
     }
-
   }
 
   if (message.channelId.toString() === strikeRecord?.UniqueId.toString()) {
