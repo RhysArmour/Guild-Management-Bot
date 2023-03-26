@@ -13,7 +13,7 @@ const isolateTickets = (message) => {
   const re = new RegExp(
     /([(])([0-9]|[1-9][0-9]|[1-4][0-9][0-9])([/])([5][0][0])([)])/g,
   );
-  const listOfTickets = message.content.replace(/\s/g, '').match(re);
+  const listOfTickets = message.content.replace(/([*])|\s/g, '').match(re)
   return listOfTickets;
 };
 

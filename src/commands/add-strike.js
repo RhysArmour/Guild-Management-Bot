@@ -9,7 +9,31 @@ module.exports = {
     .setDescription('Check strikes for one or multiple members')
     .addUserOption((option) => {
       return option
-        .setName('user')
+        .setName('user1')
+        .setDescription('User you want to add strikes too')
+        .setRequired(true);
+    })
+    .addUserOption((option) => {
+      return option
+        .setName('user2')
+        .setDescription('User you want to add strikes too')
+        .setRequired(true);
+    })
+    .addUserOption((option) => {
+      return option
+        .setName('user3')
+        .setDescription('User you want to add strikes too')
+        .setRequired(true);
+    })
+    .addUserOption((option) => {
+      return option
+        .setName('user4')
+        .setDescription('User you want to add strikes too')
+        .setRequired(true);
+    })
+    .addUserOption((option) => {
+      return option
+        .setName('user5')
         .setDescription('User you want to add strikes too')
         .setRequired(true);
     })
@@ -19,6 +43,7 @@ module.exports = {
         .setDescription('reason for strike')
         .setRequired(true)
         .addChoices(
+          { name: 'Ticket Offense', value: 'Ticket Offense'},
           { name: 'Tb Phase 1 Offense', value: 'Tb Phase 1 Offense' },
           { name: 'Tb Phase 2 Offense', value: 'Tb Phase 2 Offense' },
           { name: 'Tb Phase 3 Offense', value: 'Tb Phase 3 Offense' },
