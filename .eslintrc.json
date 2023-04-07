@@ -1,23 +1,22 @@
 {
-    "parser": "babel-eslint",
-    "extends": ["airbnb-base", "prettier"],
-    "env": {
-        "node": true,
-        "browser": true,
-        "es6": true,
-        "jest": true
-    },
-    "rules": {
-        "indent": ["error", 2],
-        "implicit-arrow-linebreak": "off",
-        "import/extensions": { "jes": "never", "json": "never" },
-        "import/no-extreneous-dependencies": [
-            "error",
-            {
-                "devDependencies": true
-            }
-        ],
-        "no-unsused-expressions": 0,
-        "function-paren-newline": 0
-    }
-} 
+  "root": true,
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es2021": true
+  },
+  "extends": ["airbnb-base", "prettier"],
+  "overrides": [],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "rules": {
+    "consistent-return": 0,
+    "no-console": "off",
+    "no-plusplus": "off",
+    "no-await-in-loop": "off",
+    "no-continue": "off"
+  },
+  "ignorePatterns": ["node_modules"]
+}
+

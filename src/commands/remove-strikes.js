@@ -4,23 +4,15 @@ const { guildDb } = require('../utils/database/guild-db');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('clearstrikes')
+    .setName('removestrikes')
     .setDescription('Clear desired number of strikes from player')
-    .addUserOption((option) => {
-      return option
-        .setName('user')
-        .setDescription('User you want to clear strikes from');
-    })
-    .addIntegerOption((option) => {
-      return option
-        .setName('amount')
-        .setDescription('amount of stirkes you want to clear');
-    })
+    .addUserOption((option) => option.setName('user').setDescription('User you want to clear strikes from'))
+    .addIntegerOption((option) => option.setName('amount').setDescription('amount of stirkes you want to clear'))
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
 
   async execute(interaction) {
     const user = interaction.options.getUser('user');
-    const name = user?.username;
+    // const name = user?.username;
     const serverId = interaction.guild.id;
     const integer = interaction.options.getInteger('amount');
 
@@ -30,13 +22,13 @@ module.exports = {
           where: { Name: user.username, UniqueId: user.id, ServerId: serverId },
         });
         if (result === null) {
-          return interaction.reply('Player is not registered with Bot. This is because they have not attained any strikes or have not been registered manually')
+          return interaction.reply(
+            'Player is not registered with Bot. This is because they have not attained any strikes or have not been registered manually',
+          );
         }
 
         if (result.Strikes === 0) {
-          await interaction.reply(
-            `Cannot remove ${integer} from ${user} because they have zero strikes`,
-          );
+          await interaction.reply(`Cannot remove ${integer} from ${user} because they have zero strikes`);
           return;
         }
         const strikes = result.Strikes - integer;
@@ -57,9 +49,7 @@ module.exports = {
             },
           },
         );
-        await interaction.reply(
-          `${integer} strike(s) have been removed from ${user.username}`,
-        );
+        await interaction.reply(`${integer} strike(s) have been removed from ${user.username}`);
         return;
       }
 
@@ -72,6 +62,5 @@ module.exports = {
         'Please provide a valid input. If you want all strikes removed, only select "all". if you would like an individuals strikes removed, please use "user" followed by "amount", like so: \n\n /clearstrikes user: {user} amount: {amount} \n or\n /clearstrikes all: true',
       );
     }
-    return;
   },
 };

@@ -1,5 +1,12 @@
 {
-    "allowParens": "always",
-    "singleQuote": true,
-    "trailingComma": "all"
+  "allowParens": "always",
+  "singleQuote": true,
+  "bracketSpacing": true,
+  "proseWrap": "preserve",
+  "endOfLine": "crlf",
+  "printWidth": 120,
+  "semi": true,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "arrowParens": "always"
 }
