@@ -3,7 +3,7 @@ node_modules
 npm-debug.log
 test-reports/
 config
-database.sqlite
+.sqlite
 
 # Coverage
 coverage/*
