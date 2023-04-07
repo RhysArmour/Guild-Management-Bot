@@ -4,7 +4,7 @@ const { guildDb } = require('../utils/database/guild-db');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('clearallstrikes')
+    .setName('removeallstrikes')
     .setDescription('Clear all strikes from players')
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
 
@@ -16,14 +16,9 @@ module.exports = {
         where: { ServerId: serverId },
       });
 
-
-
-      for await (member of guildSearch) {
-        await guildDb.update(
-          { Strikes: 0 },
-          { where: { id: member.id }, ServerId: serverId },
-        );
-      }
+      await guildSearch.forEach((member) => {
+        guildDb.update({ Strikes: 0 }, { where: { id: member.id }, ServerId: serverId });
+      });
       await interaction.reply('All strikes cleared');
       return;
     } catch (error) {

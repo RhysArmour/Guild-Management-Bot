@@ -27,7 +27,7 @@ const getAwayRole = async (serverId) => {
   const awayRole = await botDb.findOne({
     where: { Name: 'Away Role', ServerId: serverId },
   });
-  return awayRole
+  return awayRole;
 };
 
 module.exports = {
