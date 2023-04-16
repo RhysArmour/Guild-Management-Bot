@@ -1,0 +1,10 @@
+# fly.toml file generated for guildmanagementbot on 2023-04-16T15:48:28+01:00
+
+app = "guildmanagementbot"
+primary_region = "lhr"
+
+[env]
+env = "production"
+clientId = "925056654419046422"
+ticketIssuerId = "470635832462540800"
+token = "OTI1MDU2NjU0NDE5MDQ2NDIy.YcnkJQ.u_W1jHOZqt6D24qTMSe-Gz7nhsw"
