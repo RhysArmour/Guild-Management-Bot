@@ -10,8 +10,6 @@ const { ticketStrikeMessage, resetMonthlyStrikes } = require('./src/services/str
 const { currentDate } = require('./src/utils/helpers/get-date');
 const { addThreeStrikeRole } = require('./src/services/three-strike-role');
 
-const keep_alive = require('./keep_alive')
-
 const { token } = process.env;
 const { clientId } = process.env;
 const { guildId } = process.env;

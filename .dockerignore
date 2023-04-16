@@ -1,0 +1,11 @@
+# flyctl launch added from .gitignore
+**\.env
+**\node_modules
+**\npm-debug.log
+**\test-reports
+**\config
+**\.sqlite
+
+# Coverage
+**\coverage\*
+fly.toml
