@@ -2,3 +2,7 @@
 
 app = "guildmanagementbot"
 primary_region = "lhr"
+
+[mounts]
+  source="bot_data"
+  destination="/mnt/bot_data"
