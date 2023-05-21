@@ -15,8 +15,24 @@
     "no-console": "off",
     "no-plusplus": "off",
     "no-await-in-loop": "off",
-    "no-continue": "off"
+    "no-continue": "off",
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+    ],
+    "settings": {
+      "import/resolver": {
+        "node": {
+          "extensions": [".js", ".jsx", ".ts", ".tsx"]
+        }
+      }
+    }
   },
   "ignorePatterns": ["node_modules"]
 }
-

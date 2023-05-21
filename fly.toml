@@ -3,9 +3,6 @@
 app = "guildmanagementbot"
 primary_region = "lhr"
 
-[deploy]
-  release_command = "npm run migrate"
-
 [mounts]
   source="bot_data"
-  destination="/utils/data"
+  destination="/data"
