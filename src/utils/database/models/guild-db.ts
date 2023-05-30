@@ -1,6 +1,7 @@
 import { Table, Column, Model, HasMany } from 'sequelize-typescript';
-import { DiscordUser } from '../../../interfaces/discord/discordUser';
+import { DiscordUser } from '../../../interfaces/discord/DiscordUser';
 import { GuildBotData } from './bot-db';
+import { Logger } from '../../../logger';
 
 @Table
 export class GuildUserTable extends Model {
@@ -66,7 +67,7 @@ export const assignStrikes = async (user: DiscordUser, serverId: string) => {
     where: { Name: user.username, UniqueId: user.id, ServerId: serverId },
   });
   if (!duplicate) {
-    console.log('CREATING ENTRY');
+    Logger.info('CREATING ENTRY');
     return GuildUserTable.create({
       Name: user.username,
       Strikes: 1,

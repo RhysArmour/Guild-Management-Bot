@@ -1,6 +1,7 @@
 import { GuildUserTable } from '../utils/database/models/guild-db';
 import { GuildBotData } from '../utils/database/models/bot-db';
 import { GuildMember, Message, User } from 'discord.js';
+import { Logger } from '../logger';
 
 const addThreeStrikeRole = async (message: Message): Promise<string> => {
   try {
@@ -15,7 +16,7 @@ const addThreeStrikeRole = async (message: Message): Promise<string> => {
         where: { Name: user?.username, UniqueId: user?.id, ServerId: serverId },
       });
       if (userProfile?.strikes && userProfile.strikes >= 3) {
-        const threeStrikeRole = await GuildBotData.findOne({ where: {ServerId: serverId } });
+        const threeStrikeRole = await GuildBotData.findOne({ where: { ServerId: serverId } });
         if (threeStrikeRole.strikeLimitRoleId) {
           member.roles.add(threeStrikeRole.strikeLimitRoleId);
         }
@@ -25,7 +26,7 @@ const addThreeStrikeRole = async (message: Message): Promise<string> => {
     reply += '\n\nAssigning 3 strike roles to the above. An Officer will contact you shortly.';
     return reply;
   } catch (error) {
-    console.log(error);
+    Logger.error(error);
     throw error;
   }
 };

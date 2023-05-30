@@ -1,8 +1,9 @@
 import { GuildBotData } from '../utils/database/models/bot-db';
 import { CommandInteraction, InteractionType, Role, TextChannel } from 'discord.js';
+import { Logger } from '../logger';
 
 const channelSetup = async (interaction: CommandInteraction) => {
-  console.log('Channel Setup');
+  Logger.info('Channel Setup');
 
   if (interaction.type !== InteractionType.ApplicationCommand) return;
   if (!interaction.isChatInputCommand()) return;
@@ -44,12 +45,12 @@ const channelSetup = async (interaction: CommandInteraction) => {
     });
     return `Ticket Offense Channel set to "${offenseChannel.name}" and Strike Channel set to "${strikeChannel.name}"`;
   } catch (error) {
-    console.log('ERROR', error);
+    Logger.info('ERROR', error);
   }
 };
 
 const awayRoleSetup = async (interaction: CommandInteraction) => {
-  console.log('Away Role Setup');
+  Logger.info('Away Role Setup');
   if (interaction.type !== InteractionType.ApplicationCommand) return;
   if (!interaction.isChatInputCommand()) return;
   const awayRole = interaction.options.getRole('awayrole') as Role;
@@ -76,18 +77,18 @@ const awayRoleSetup = async (interaction: CommandInteraction) => {
     });
     return `Away role set to "${awayRole.name}"`;
   } catch (error) {
-    console.log('ERROR', error);
+    Logger.info('ERROR', error);
   }
 };
 
 const threeStrikeRoleSetup = async (interaction: CommandInteraction) => {
-  console.log('Three Strike Role Setup');
+  Logger.info('Three Strike Role Setup');
   if (interaction.type !== InteractionType.ApplicationCommand) return;
   if (!interaction.isChatInputCommand()) return;
   const threeStrikeRole = interaction.options.getRole('3strikerole') as Role;
   const serverId = interaction.guild!.id;
 
-  console.log('SERVERID', serverId);
+  Logger.info('SERVERID', serverId);
 
   const duplicateThreeStrikeRole = await GuildBotData.findOne({
     where: { Name: '3 Strike Role', ServerId: serverId },
@@ -110,17 +111,17 @@ const threeStrikeRoleSetup = async (interaction: CommandInteraction) => {
     });
     return `3 strike role set to "${threeStrikeRole.name}"`;
   } catch (error) {
-    console.log('ERROR', error);
+    Logger.info('ERROR', error);
   }
 };
 
 const triggerSetup = async (interaction: CommandInteraction) => {
-  console.log('Trigger Setup');
+  Logger.info('Trigger Setup');
   if (interaction.type !== InteractionType.ApplicationCommand) return;
   if (!interaction.isChatInputCommand()) return;
   const alert = interaction.options.getString('triggerphrase')!;
   const serverId = interaction.guild!.id;
-  console.log('SERVERID', serverId);
+  Logger.info('SERVERID', serverId);
 
   const duplicateTrigger = await GuildBotData.findOne({
     where: { Name: 'Trigger Message', ServerId: serverId },
@@ -143,7 +144,7 @@ const triggerSetup = async (interaction: CommandInteraction) => {
     });
     return `Trigger message set to "${alert}"`;
   } catch (error) {
-    console.log('ERROR', error);
+    Logger.info('ERROR', error);
   }
 };
 

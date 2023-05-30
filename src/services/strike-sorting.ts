@@ -1,9 +1,10 @@
 import { getStrikes, GuildUserTable, assignStrikes } from '../utils/database/models/guild-db';
 import { GuildBotData, getAwayRole } from '../utils/database/models/bot-db';
 import { currentDate } from '../utils/helpers/get-date';
+import { Logger } from '../logger';
 
 const isolateTickets = (message) => {
-  console.info('Isolating Tickets');
+  Logger.info('Isolating Tickets');
   const re = /([(])([0-9]|[1-9][0-9]|[1-4][0-9][0-9])([/])([5][0][0])([)])/g;
   const listOfTickets = message.content.replace(/([*])|\s/g, '').match(re);
   return listOfTickets;
@@ -37,7 +38,7 @@ const ticketStrikes = async (message) => {
       response += `<@${user.id}> - ${strikes} - Missed Tickets${ticket}\n`;
     }
   } catch (error) {
-    console.log(error);
+    Logger.error(error);
   }
   const result = {
     response,
@@ -70,16 +71,13 @@ const ticketStrikeMessage = async (message) => {
 const resetMonthlyStrikes = async (strikeRecord, client) => {
   const { month } = currentDate();
   const { UniqueId, ServerId } = strikeRecord;
-  console.info('Resetting Monthly Strikes');
+  Logger.info('Resetting Monthly Strikes');
   const strikeChannel = client.channels.cache.find((channel) => channel.id === UniqueId);
   strikeChannel.send('1st of the month, Resetting monthly strikes.');
   await GuildUserTable.update({ strikes: 0 }, { where: { ServerId } });
 
-  console.info('Updating Strike Reset date');
-  await GuildBotData.update(
-    { lastStrikeReset: Date.now(), ServerId: ServerId },
-    { where: { ServerId: ServerId } },
-  );
+  Logger.info('Updating Strike Reset date');
+  await GuildBotData.update({ lastStrikeReset: Date.now(), ServerId: ServerId }, { where: { ServerId: ServerId } });
 };
 
 export { ticketStrikeMessage, resetMonthlyStrikes };

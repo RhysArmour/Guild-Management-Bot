@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import { GuildBotData } from './models/bot-db';
-import { GuildUserTable } from './models/guild-db'
-
+import { GuildUserTable } from './models/guild-db';
+import { Logger } from '../../logger';
 
 export const connectToPostgres = async () => {
   const sequelize = new Sequelize({
@@ -11,17 +11,16 @@ export const connectToPostgres = async () => {
     dialect: 'postgres',
     username: 'postgres',
     password: 'admin',
-    logging: msg => console.log
-  }
-  );
+    logging: (msg) => Logger.info,
+  });
   try {
-    console.log('attempting to add models');
+    Logger.info('attempting to add models');
     const model = sequelize.addModels([GuildBotData, GuildUserTable]);
-    console.log(`Models ${model} added. Starting authentication`);
+    Logger.info(`Models ${model} added. Starting authentication`);
     await sequelize.authenticate();
-    console.log('Connection Established to Database');
+    Logger.info('Connection Established to Database');
   } catch (error) {
-    console.error(error)
-    console.error('Unable to Authenticate Database');
+    Logger.error(error);
+    Logger.error('Unable to Authenticate Database');
   }
 };
