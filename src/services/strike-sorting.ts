@@ -1,7 +1,10 @@
-import { getStrikes, GuildUserTable, assignStrikes } from '../utils/database/models/guild-db';
-import { GuildBotData, getAwayRole } from '../utils/database/models/bot-db';
-import { currentDate } from '../utils/helpers/get-date';
+import { PrismaClient } from '@prisma/client';
+import { getStrikes } from '../utils/database/services/member-services';
+import { assignStrikes } from '../utils/database/services/member-services';
+import { getAwayRole } from '../utils/database/services/role-services';
 import { Logger } from '../logger';
+
+const prisma = new PrismaClient();
 
 const isolateTickets = (message) => {
   Logger.info('Isolating Tickets');
@@ -31,11 +34,10 @@ const ticketStrikes = async (message) => {
       }
 
       await assignStrikes(user, serverId);
-      const numberOfStrikes = await getStrikes(user, serverId);
+      const {strikes} = await getStrikes(user, serverId);
       const strike = ':x:';
-      const strikes = strike.repeat(numberOfStrikes);
 
-      response += `<@${user.id}> - ${strikes} - Missed Tickets${ticket}\n`;
+      response += `<@${user.id}> - ${strike.repeat(strikes)} - Missed Tickets${ticket}\n`;
     }
   } catch (error) {
     Logger.error(error);
@@ -49,7 +51,9 @@ const ticketStrikes = async (message) => {
 };
 
 const ticketStrikeMessage = async (message) => {
-  const { day, month } = currentDate();
+  const date = new Date();
+  const day = date.getDay();
+  const month = date.toLocaleString('default', { month: 'long' });
   const serverId = message.guild.id;
   const { response, awayMembers } = await ticketStrikes(message);
   let reply = `Strikes for ${day} ${month}: \n\n${response}`;
@@ -69,15 +73,20 @@ const ticketStrikeMessage = async (message) => {
 };
 
 const resetMonthlyStrikes = async (strikeRecord, client) => {
-  const { month } = currentDate();
-  const { UniqueId, ServerId } = strikeRecord;
+  const date = new Date();
+  const day = date.getDay();
+  const month = date.toLocaleString('default', { month: 'long' });
+  const { uniqueUserId, serverId } = strikeRecord;
   Logger.info('Resetting Monthly Strikes');
-  const strikeChannel = client.channels.cache.find((channel) => channel.id === UniqueId);
+  const strikeChannel = client.channels.cache.find((channel) => channel.id === uniqueUserId);
   strikeChannel.send('1st of the month, Resetting monthly strikes.');
-  await GuildUserTable.update({ strikes: 0 }, { where: { ServerId } });
+  await prisma.members.updateMany({ where: { serverId: serverId }, data: { strikes: 0 } });
 
   Logger.info('Updating Strike Reset date');
-  await GuildBotData.update({ lastStrikeReset: Date.now(), ServerId: ServerId }, { where: { ServerId: ServerId } });
+  await prisma.strikes.updateMany({
+    where: { serverId: serverId },
+    data: { lastStrikeReset: Date.now().toString() },
+  });
 };
 
 export { ticketStrikeMessage, resetMonthlyStrikes };

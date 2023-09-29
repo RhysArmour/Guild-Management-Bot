@@ -1,30 +1,33 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { GuildUserTable } from '../../utils/database/models/guild-db';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
-
+import prisma from '../../utils/database/prisma';
 
 export default new Command({
   name: 'checkallstrikes',
   description: 'Check strikes for all members',
   execute: async ({ interaction }) => {
-    interaction.followUp('Pong')
-  }
-})
+    const serverId = interaction.guildId;
+    const result = await prisma.members.findMany({
+      where: { serverId: serverId },
+      select: {
+        name: true,
+        strikes: true,
+        lifetimeStrikes: true
+      },
+    });
 
+    Logger.info(`Received strike list: ${result}`)
 
+    let message = ''
 
-// export const data = new SlashCommandBuilder()
-//   .setName('checkallstrikes')
-//   .setDescription('Check strikes for all members');
+    Logger.info(result)
 
-// export async function execute(interaction: any) {
-//   const serverId = interaction.guild.id;
-//   const guildSearch = await GuildUserTable.findAll({ where: { ServerId: serverId } });
+    result.forEach((item) => {
+      Logger.info(item)
+      message = message + `Name: ${item.name} - Strikes: ${item.strikes} - Lifetime Strikes: ${item.lifetimeStrikes}\n`
+    })
 
-//   let reply = 'Here is the list of guild strikes:';
-//   guildSearch.forEach((member: any) => {
-//     reply += `\n\n${member.Name}: \nstrikes: ${member.Strikes} \nlifetime strikes: ${member.TotalStrikes}`;
-//   });
-//   await interaction.reply(reply);
-// }
+    return message;
+  },
+});

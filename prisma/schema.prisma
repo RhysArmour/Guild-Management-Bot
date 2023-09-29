@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ServerTable {
+  serverId    String    @id @unique
+  serverName  String
+  createdDate DateTime
+  updatedDate DateTime
+  members     Members[]
+}
+
+model Members {
+  uniqueId                String          @id
+  serverId                String
+  serverName              ServerTable     @relation(fields: [serverId], references: [serverId])
+  memberId                String
+  name                    String
+  strikes                 Int
+  strikeReasons           StrikeReasons[]
+  lifetimeStrikes         Int
+  absent                  Boolean
+  currentAbsenceStartDate String?
+  previousAbsenceDuration String?
+  createdDate             DateTime
+  updatedDate             DateTime
+  @@index([uniqueId], name: "idx_uniqueId")
+}
+
+model StrikeReasons {
+  id       Int      @id @default(autoincrement())
+  name     String   
+  uniqueId String
+  date     String
+  reason   String
+  @@unique([uniqueId, date, reason], name: "unique_reason")
+  member   Members @relation(fields: [uniqueId], references: [uniqueId])
+}
+
+model Strikes {
+  serverId               String    @unique
+  strikeChannelName      String
+  strikeChannelId        String    @unique
+  strikeLimitChannelName String
+  strikeLimitChannelId   String    @unique
+  strikeLimit            Int
+  strikeResetPeriod      String?
+  lastStrikeReset        DateTime?
+  createdDate            DateTime
+  updatedDate            DateTime
+}
+
+model Tickets {
+  serverId          String   @id @unique
+  ticketChannelName String
+  ticketChannelId   String   @unique
+  ticketLimit       Int
+  triggerPhrase     String
+  createdDate       DateTime
+  updatedDate       DateTime
+}
+
+model GuildRole {
+  serverId            String   @id @unique
+  guildRoleId         String   @unique
+  guildRoleName       String   @unique
+  absenceRoleId       String   @unique
+  absenceRoleName     String
+  strikeLimitRoleId   String   @unique
+  strikeLimitRoleName String
+  createdDate         DateTime
+  updatedDate         DateTime
+}

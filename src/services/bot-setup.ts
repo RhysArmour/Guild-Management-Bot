@@ -1,151 +1,138 @@
-import { GuildBotData } from '../utils/database/models/bot-db';
-import { CommandInteraction, InteractionType, Role, TextChannel } from 'discord.js';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { CommandInteraction, CommandInteractionOptionResolver, InteractionType, Role, TextChannel } from 'discord.js';
 import { Logger } from '../logger';
 
-const channelSetup = async (interaction: CommandInteraction) => {
-  Logger.info('Channel Setup');
+type ServerTableUpdateInput = Prisma.ServerTableUpdateInput;
+type StrikeUpdateInput = Prisma.StrikesUpdateInput;
+type TicketsUpdateInput = Prisma.TicketsUpdateInput;
+type GuildRolesUpdateInput = Prisma.GuildRoleUpdateInput;
+type ServerTableCreateInput = Prisma.ServerTableCreateInput;
+type StrikeCreateInput = Prisma.StrikesCreateInput;
+type TicketsCreateInput = Prisma.TicketsCreateInput;
+type GuildRolesCreateInput = Prisma.GuildRoleCreateInput;
 
-  if (interaction.type !== InteractionType.ApplicationCommand) return;
-  if (!interaction.isChatInputCommand()) return;
+export const updateServerTable = (interaction: CommandInteraction, serverData: any) => {
+  Logger.info('Create Guild Server Table');
 
-  const serverId = interaction.guild!.id;
+  const guildDataToUpdate: ServerTableUpdateInput = {
+    serverId: interaction.guildId!.toString(),
+    serverName: interaction.guild!.name,
+    createdDate: new Date().toISOString(),
+    updatedDate: new Date().toISOString(),
+  };
 
-  const guildBotData = await GuildBotData.findOne({
-    where: { ServerId: serverId },
-  });
+  return guildDataToUpdate;
+};
 
-  const offenseChannel = interaction.options.getChannel('ticketoffensechannel') as TextChannel;
-  const strikeChannel = interaction.options.getChannel('strikechannel') as TextChannel;
+export const updateStrikeTable = (interaction: CommandInteraction, serverData: any) => {
+  const { strikeChannel, strikeLimitChannel, strikeLimit } = serverData;
 
-  try {
-    if (guildBotData) {
-      await GuildBotData.update(
-        { Value: offenseChannel.name, UniqueId: offenseChannel.id },
-        { where: { Name: 'Ticket Offense Channel', ServerId: serverId } },
-      );
-      await GuildBotData.update(
-        { Value: strikeChannel.name, UniqueId: strikeChannel.id },
-        { where: { Name: 'Strike Channel', ServerId: serverId } },
-      );
-      return `Ticket Offense Channel updated to "${offenseChannel.name}" and Strike Channel updated to "${strikeChannel.name}"`;
-    }
-    await GuildBotData.create({
-      Name: 'Ticket Offense Channel',
-      Description: null,
-      Value: offenseChannel.name,
-      UniqueId: offenseChannel.id,
-      ServerId: serverId,
-    });
-    await GuildBotData.create({
-      Name: 'Strike Channel',
-      Description: null,
-      Value: strikeChannel.name,
-      UniqueId: strikeChannel.id,
-      ServerId: serverId,
-    });
-    return `Ticket Offense Channel set to "${offenseChannel.name}" and Strike Channel set to "${strikeChannel.name}"`;
-  } catch (error) {
-    Logger.info('ERROR', error);
+  if (strikeChannel && strikeLimitChannel) {
+    const guildDataToUpdate: StrikeUpdateInput | StrikeCreateInput = {
+      strikeChannelName: strikeChannel.name,
+      strikeChannelId: strikeChannel.id,
+      strikeLimitChannelId: strikeLimitChannel.id,
+      strikeLimitChannelName: strikeLimitChannel.name,
+      strikeLimit: strikeLimit,
+    };
+    return guildDataToUpdate;
   }
 };
 
-const awayRoleSetup = async (interaction: CommandInteraction) => {
-  Logger.info('Away Role Setup');
-  if (interaction.type !== InteractionType.ApplicationCommand) return;
-  if (!interaction.isChatInputCommand()) return;
-  const awayRole = interaction.options.getRole('awayrole') as Role;
-  const serverId = interaction.guild!.id;
+export const updateTicketsTable = (interaction: CommandInteraction, serverData: any) => {
+  const { offenseChannel, ticketLimit, triggerPhrase } = serverData;
 
-  const duplicateAwayRole = await GuildBotData.findOne({
-    where: { Name: 'Away Role', ServerId: serverId },
-  });
-
-  try {
-    if (duplicateAwayRole) {
-      await GuildBotData.update(
-        { Value: awayRole.name, UniqueId: awayRole.id },
-        { where: { Name: 'Away Role', ServerId: serverId } },
-      );
-      return `Away role updated to "${awayRole.name}"`;
-    }
-    await GuildBotData.create({
-      Name: 'Away Role',
-      Description: null,
-      Value: awayRole.name,
-      UniqueId: awayRole.id,
-      ServerId: serverId,
-    });
-    return `Away role set to "${awayRole.name}"`;
-  } catch (error) {
-    Logger.info('ERROR', error);
+  if (offenseChannel) {
+    const guildDataToUpdate: TicketsUpdateInput | TicketsCreateInput = {
+      ticketChannelName: offenseChannel.name,
+      ticketChannelId: offenseChannel.id,
+      ticketLimit: ticketLimit,
+      triggerPhrase: triggerPhrase,
+    };
+    return guildDataToUpdate;
   }
 };
 
-const threeStrikeRoleSetup = async (interaction: CommandInteraction) => {
-  Logger.info('Three Strike Role Setup');
-  if (interaction.type !== InteractionType.ApplicationCommand) return;
-  if (!interaction.isChatInputCommand()) return;
-  const threeStrikeRole = interaction.options.getRole('3strikerole') as Role;
-  const serverId = interaction.guild!.id;
+export const updateRolesTable = (interaction: CommandInteraction, serverData: any) => {
+  const { awayRole, guildRole, strikeLimitRole } = serverData;
 
-  Logger.info('SERVERID', serverId);
-
-  const duplicateThreeStrikeRole = await GuildBotData.findOne({
-    where: { Name: '3 Strike Role', ServerId: serverId },
-  });
-
-  try {
-    if (duplicateThreeStrikeRole) {
-      await GuildBotData.update(
-        { Value: threeStrikeRole.name, UniqueId: threeStrikeRole.id },
-        { where: { Name: '3 Strike Role', ServerId: serverId } },
-      );
-      return `3 strike role updated to "${threeStrikeRole.name}"`;
-    }
-    await GuildBotData.create({
-      Name: '3 Strike Role',
-      Description: null,
-      Value: threeStrikeRole.name,
-      UniqueId: threeStrikeRole.id,
-      ServerId: serverId,
-    });
-    return `3 strike role set to "${threeStrikeRole.name}"`;
-  } catch (error) {
-    Logger.info('ERROR', error);
+  if (awayRole && guildRole && strikeLimitRole) {
+    const guildDataToUpdate: GuildRolesUpdateInput | GuildRolesCreateInput = {
+      absenceRoleId: awayRole.id,
+      absenceRoleName: awayRole.name,
+      guildRoleId: guildRole.id,
+      guildRoleName: guildRole.name,
+      strikeLimitRoleId: strikeLimitRole.id,
+      strikeLimitRoleName: strikeLimitRole.name,
+    };
+    return guildDataToUpdate;
   }
 };
 
-const triggerSetup = async (interaction: CommandInteraction) => {
-  Logger.info('Trigger Setup');
-  if (interaction.type !== InteractionType.ApplicationCommand) return;
-  if (!interaction.isChatInputCommand()) return;
-  const alert = interaction.options.getString('triggerphrase')!;
-  const serverId = interaction.guild!.id;
-  Logger.info('SERVERID', serverId);
+export const createServerTable = (interaction: CommandInteraction, serverData: any) => {
+  Logger.info('Create Guild Server Table');
 
-  const duplicateTrigger = await GuildBotData.findOne({
-    where: { Name: 'Trigger Message', ServerId: serverId },
-  });
+  const guildDataToCreate: ServerTableCreateInput = {
+    serverId: interaction.guildId!.toString(),
+    serverName: interaction.guild!.name,
+    createdDate: new Date().toISOString(),
+    updatedDate: new Date().toISOString(),
+  };
 
-  try {
-    if (duplicateTrigger) {
-      await GuildBotData.update(
-        { Value: alert, UniqueId: alert },
-        { where: { Name: 'Trigger Message', ServerId: serverId } },
-      );
-      return `Trigger Message updated to "${alert}"`;
-    }
-    await GuildBotData.create({
-      Name: 'Trigger Message',
-      Description: null,
-      Value: alert,
-      UniqueId: null,
-      ServerId: serverId,
-    });
-    return `Trigger message set to "${alert}"`;
-  } catch (error) {
-    Logger.info('ERROR', error);
+  return guildDataToCreate;
+};
+
+export const createStrikeTable = (interaction: CommandInteraction, serverData: any) => {
+  const { strikeChannel, strikeLimitChannel, strikeLimit } = serverData;
+
+  if (strikeChannel && strikeLimitChannel) {
+    const guildDataToCreate: StrikeCreateInput = {
+      serverId: interaction.guild.id,
+      createdDate: new Date().toISOString(),
+      updatedDate: new Date().toISOString(),
+      strikeChannelName: strikeChannel.name,
+      strikeChannelId: strikeChannel.id,
+      strikeLimitChannelId: strikeLimitChannel.id,
+      strikeLimitChannelName: strikeLimitChannel.name,
+      strikeLimit: strikeLimit,
+    };
+    return guildDataToCreate;
   }
 };
 
-export { channelSetup, awayRoleSetup, threeStrikeRoleSetup, triggerSetup };
+export const createTicketsTable = (interaction: CommandInteraction, serverData: any) => {
+  const { offenseChannel, ticketLimit, triggerPhrase } = serverData;
+
+  if (offenseChannel) {
+    const guildDataToCreate: TicketsCreateInput = {
+      serverId: interaction.guild.id,
+      createdDate: new Date().toISOString(),
+      updatedDate: new Date().toISOString(),
+      ticketChannelName: offenseChannel.name,
+      ticketChannelId: offenseChannel.id,
+      ticketLimit: ticketLimit,
+      triggerPhrase: triggerPhrase,
+    };
+    return guildDataToCreate;
+  }
+};
+
+export const createRolesTable = (interaction: CommandInteraction, serverData: any) => {
+  const { awayRole, guildRole, strikeLimitRole } = serverData;
+
+  if (awayRole && guildRole && strikeLimitRole) {
+    const guildDataToCreate: GuildRolesCreateInput = {
+      serverId: interaction.guild.id,
+      createdDate: new Date().toISOString(),
+      updatedDate: new Date().toISOString(),
+      absenceRoleId: awayRole.id,
+      absenceRoleName: awayRole.name,
+      guildRoleId: guildRole.id,
+      guildRoleName: guildRole.name,
+      strikeLimitRoleId: strikeLimitRole.id,
+      strikeLimitRoleName: strikeLimitRole.name,
+    };
+    return guildDataToCreate;
+  }
+};
+

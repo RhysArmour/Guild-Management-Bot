@@ -1,79 +1,64 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { PermissionFlagsBits } from 'discord.js';
-import { GuildUserTable } from '../../utils/database/models/guild-db';
+import { ApplicationCommandOptionType, PermissionFlagsBits } from 'discord.js';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
-
-
+import { removeStrikeFromMember } from '../../methods/remove-strikes';
+import { choices } from '../../utils/commandVariables';
 
 export default new Command({
   name: 'removestrikes',
   description: 'remove desired number of strikes from player',
+  defaultMemberPermissions: 'KickMembers',
+  options: [
+    {
+      name: 'user',
+      description: 'Member you want to remove strikes from',
+      type: ApplicationCommandOptionType.User,
+      required: true,
+    },
+    {
+      name: 'strike1',
+      description: 'The 1st strike you want to remove from member',
+      type: ApplicationCommandOptionType.String,
+      required: true,
+      choices: choices
+    },
+    {
+      name: 'reason1',
+      description: 'Reason for removing strike from member (optional)',
+      type: ApplicationCommandOptionType.String,
+      required: false,
+    },
+    {
+      name: 'strike2',
+      description: 'The 2nd strike you want to remove from member',
+      type: ApplicationCommandOptionType.String,
+      required: false,
+      choices: choices
+    },
+    {
+      name: 'reason2',
+      description: 'Reason for removing strike from member (optional)',
+      type: ApplicationCommandOptionType.String,
+      required: false,
+    },
+    {
+      name: 'strike3',
+      description: 'The 3rd strike you want to remove from member',
+      type: ApplicationCommandOptionType.String,
+      required: false,
+      choices: choices
+    },
+    {
+      name: 'reason3',
+      description: 'Reason for removing strike from member (optional)',
+      type: ApplicationCommandOptionType.String,
+      required: false,
+    },
+
+  ],
   execute: async ({ interaction }) => {
-    interaction.followUp('Pong')
-  }
-})
-
-// export const data = new SlashCommandBuilder()
-//   .setName('removestrikes')
-//   .setDescription('Clear desired number of strikes from player')
-//   .addUserOption((option) => option.setName('user').setDescription('User you want to clear strikes from'))
-//   .addIntegerOption((option) => option.setName('amount').setDescription('amount of strikes you want to clear'))
-//   .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers);
-
-// export async function execute(interaction: any) {
-//   const user = interaction.options.getUser('user');
-//   const serverId = interaction.guild.id;
-//   const integer = interaction.options.getInteger('amount');
-
-//   try {
-//     if (user && integer) {
-//       const result = await GuildUserTable.findOne({
-//         where: { Name: user.username, UniqueId: user.id, ServerId: serverId },
-//       });
-
-//       if (result === null) {
-//         return interaction.reply(
-//           'Player is not registered with Bot. This is because they have not attained any strikes or have not been registered manually',
-//         );
-//       }
-
-//       if (result.strikes === 0) {
-//         await interaction.reply(`Cannot remove ${integer} from ${user.username} because they have zero strikes`);
-//         return;
-//       }
-
-//       const strikes = result.strikes - integer;
-
-//       if (strikes < 0) {
-//         await interaction.reply(
-//           `Cannot remove more strikes than a member has. Current strikes for ${user.username} is ${result.strikes} therefore you can only remove a maximum of ${result.strikes}`,
-//         );
-//         return;
-//       }
-
-//       await GuildUserTable.update(
-//         { Strikes: strikes },
-//         {
-//           where: {
-//             Name: user.username,
-//             UniqueId: user.id,
-//             ServerId: serverId,
-//           },
-//         },
-//       );
-
-//       await interaction.reply(`${integer} strike(s) have been removed from ${user.username}`);
-//       return;
-//     }
-
-//     await interaction.reply(
-//       'Please provide a valid input. If you want all strikes removed, only select "all". if you would like an individual\'s strikes removed, please use "user" followed by "amount", like so:\n\n /clearstrikes user: {user} amount: {amount}\n or\n /clearstrikes all: true',
-//     );
-//   } catch (error) {
-//     Logger.error(error);
-//     await interaction.reply(
-//       'Please provide a valid input. If you want all strikes removed, only select "all". if you would like an individual\'s strikes removed, please use "user" followed by "amount", like so:\n\n /clearstrikes user: {user} amount: {amount}\n or\n /clearstrikes all: true',
-//     );
-//   }
-// }
+    const result = removeStrikeFromMember(interaction)
+    return result
+  },
+});

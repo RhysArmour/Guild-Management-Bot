@@ -1,7 +1,8 @@
-import { GuildUserTable } from '../utils/database/models/guild-db';
-import { GuildBotData } from '../utils/database/models/bot-db';
-import { GuildMember, Message, User } from 'discord.js';
+import { PrismaClient } from '@prisma/client';
+import { GuildMember, Message, Role, User } from 'discord.js';
 import { Logger } from '../logger';
+
+const prisma = new PrismaClient();
 
 const addThreeStrikeRole = async (message: Message): Promise<string> => {
   try {
@@ -12,13 +13,15 @@ const addThreeStrikeRole = async (message: Message): Promise<string> => {
     for (let i = 0; i < users.length; i++) {
       const user = message.mentions.users.first(i + 1)?.[i];
       const member = message.mentions.members.first(i + 1)?.[i] as GuildMember;
-      const userProfile = await GuildUserTable.findOne({
-        where: { Name: user?.username, UniqueId: user?.id, ServerId: serverId },
+      const userProfile = await prisma.members.findUnique({
+        where: { uniqueId: `${serverId} - ${user.id}` },
       });
       if (userProfile?.strikes && userProfile.strikes >= 3) {
-        const threeStrikeRole = await GuildBotData.findOne({ where: { ServerId: serverId } });
+        const threeStrikeRole = await prisma.guildRole.findUnique({
+          where: { serverId: serverId },
+        });
         if (threeStrikeRole.strikeLimitRoleId) {
-          member.roles.add(threeStrikeRole.strikeLimitRoleId);
+          member.roles.add(threeStrikeRole.strikeLimitRoleId.toString());
         }
       }
       reply += `${message.mentions.members.first(i + 1)?.[i]}`;
