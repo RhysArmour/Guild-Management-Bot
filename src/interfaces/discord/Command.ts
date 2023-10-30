@@ -1,10 +1,8 @@
 import {
   ChatInputApplicationCommandData,
-  Client,
   CommandInteraction,
   CommandInteractionOptionResolver,
   GuildMember,
-  Message,
   PermissionResolvable,
 } from 'discord.js';
 import ExtendedClient from '../../classes/ClientClass';

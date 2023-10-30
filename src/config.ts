@@ -3,8 +3,8 @@ dotenv.config()
 const {guildId, token, clientId} = process.env
 
 if(!clientId || !guildId || !token) {
-    throw new Error('Missing environment varialble')
-};
+    throw new Error('Missing environment variable')
+}
 
 const config: Record<string, string> = {
     clientId,

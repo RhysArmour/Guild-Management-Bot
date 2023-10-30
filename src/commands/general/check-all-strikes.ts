@@ -1,33 +1,38 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
-import prisma from '../../utils/database/prisma';
+import { MemberTableServices } from '../../database/services/member-services';
 
 export default new Command({
   name: 'checkallstrikes',
   description: 'Check strikes for all members',
   execute: async ({ interaction }) => {
-    const serverId = interaction.guildId;
-    const result = await prisma.members.findMany({
-      where: { serverId: serverId },
-      select: {
-        name: true,
-        strikes: true,
-        lifetimeStrikes: true
-      },
-    });
+    try {
+      const serverId = interaction.guildId;
+      const result = await MemberTableServices.getAllGuildStrikesByInteraction(interaction);
 
-    Logger.info(`Received strike list: ${result}`)
+      Logger.info(`Received strike list: ${JSON.stringify(result)}`);
 
-    let message = ''
+      let message = '';
+      const i = 0;
 
-    Logger.info(result)
+      result.forEach((item) => {
+        message += `${i + 1}. Name: ${item.name} - Strikes: ${item.strikes} - Lifetime Strikes: ${
+          item.lifetimeStrikes
+        }\n`;
+      });
 
-    result.forEach((item) => {
-      Logger.info(item)
-      message = message + `Name: ${item.name} - Strikes: ${item.strikes} - Lifetime Strikes: ${item.lifetimeStrikes}\n`
-    })
+      Logger.info(`Sending strike list response for server ID: ${serverId}`);
 
-    return message;
+      return {
+        content: result,
+        message,
+      };
+    } catch (error) {
+      Logger.error(`Error while checking all strikes: ${error}`);
+      await interaction.reply({
+        content: 'An error occurred while checking all strikes.',
+        ephemeral: true,
+      });
+    }
   },
 });

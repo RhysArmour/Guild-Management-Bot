@@ -1,22 +1,31 @@
-import { CommandInteraction, InteractionType, TextChannel } from 'discord.js';
-import prisma from '../utils/database/prisma';
+import { CommandInteraction, GuildMember, InteractionType, TextChannel } from 'discord.js';
 import { Logger } from '../logger';
-import { Members, Strikes } from '@prisma/client';
-import { assignStrikes } from '../utils/database/services/member-services';
-import { updateReasons } from '../utils/database/services/strike-reason-services';
+import { MemberTableServices } from '../database/services/member-services';
+import { StrikeReasonsServices } from '../database/services/strike-reason-services';
+import { StrikeValuesTableService } from '../database/services/strike-values-services';
+import { ChannelTableService } from '../database/services/channel-services';
 
 export const addStrike = async (interaction: CommandInteraction) => {
-  if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
-    Logger.info('Interaction is not an Application Command');
-    return undefined;
-  }
   try {
-    Logger.info('Beggining Adding Strike');
+    if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
+      Logger.info('Interaction is not an Application Command');
+      return undefined;
+    }
+    Logger.info('Beginning Adding Strike');
+
     const serverId = interaction.guildId!;
-    const { strikeChannelId, strikeChannelName } = await prisma.strikes.findUnique({
-      where: { serverId: serverId },
-    });
-    Logger.info('Database entry found');
+    const { strikeChannelId, strikeChannelName } = await ChannelTableService.getChannelsByServerId(serverId);
+
+    if (!strikeChannelId || !strikeChannelName) {
+      Logger.error('Strike channel not found in the database.');
+      await interaction.reply({
+        content: 'Strike channel not found in the database.',
+        ephemeral: true,
+      });
+      return;
+    }
+    Logger.info(`Database entry found for server: ${serverId}`);
+
     const strike = ':x:';
     let message = '';
     const length = interaction.options.data.length;
@@ -26,24 +35,44 @@ export const addStrike = async (interaction: CommandInteraction) => {
     Logger.info(`Strike Channel Name & ID: ${strikeChannelName}: ${strikeChannelId}`);
 
     for (let i = 0; i < length / 2; i += 1) {
-      const user = interaction.options.getUser(`user${i + 1}`)!;
+      const member = interaction.options.getMember(`user${i + 1}`) as GuildMember;
       const reason = (interaction.options.get(`reason${i + 1}`)?.value as string) ?? '';
-      Logger.info(`${user}\n${reason}`);
-      const { id, username } = user;
+
+      Logger.info(`${member.displayName}\n${reason}`);
+      const { id, displayName } = member;
       const tag = `<@${id}>`;
+      let strikes: number;
+      let lifetimeStrikes: number;
 
-      Logger.info(`Processing strike for User ID: ${id}, Username: ${username}, Reason: ${reason}`);
+      Logger.info(`Processing strike for User ID: ${id}, Username: ${displayName}, Reason: ${reason}`);
 
-      const result = await assignStrikes(user, serverId);
-      const reasons = await updateReasons(reason, user, serverId);
+      let memberRecord = await MemberTableServices.getMemberWithMember(member);
+
+      if (!memberRecord) {
+        memberRecord = await MemberTableServices.createMemberWithMember(member);
+      }
+
+      const strikeValue = await StrikeValuesTableService.getStrikeValueObjectByInteraction(interaction, reason);
+
+      if (strikeValue) {
+        strikes = memberRecord.strikes + strikeValue.value;
+        lifetimeStrikes = memberRecord.lifetimeStrikes + strikeValue.value;
+      } else {
+        strikes = memberRecord.strikes + 1;
+        lifetimeStrikes = memberRecord.lifetimeStrikes + 1;
+      }
+
+      const result = await MemberTableServices.updateMemberWithMember(member, { strikes, lifetimeStrikes });
+      const reasons = await StrikeReasonsServices.createStrikeReasonByMember(member, { reason, name: displayName, id });
+
       Logger.info(result);
       Logger.info(`Reasons: ${reasons}`);
-      let strikes: number;
-      ({ strikes } = result as Members);
-      message += `- ${strike} has been added to ${tag} - ${reason}.\n   - ${username} now has ${strikes} strikes ${strike.repeat(
+
+      message += `- ${strike} has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${strikes} strikes ${strike.repeat(
         strikes,
       )}\n\n`;
-      reply += `- Strike for ${username} has been updated. ${username} now has ${strikes} strikes\n\n`;
+      reply += `- Strike for ${displayName} has been updated. ${displayName} now has ${strikes} strikes\n\n`;
+      Logger.info('🚀 ~ file: add-strike.ts:71 ~ addStrike ~ message:', message);
     }
 
     Logger.info(`Strike Message: ${message}`);
@@ -58,13 +87,15 @@ export const addStrike = async (interaction: CommandInteraction) => {
     if (strikeChannel) {
       await strikeChannel.send(message);
       Logger.info(`Strike message sent to strike channel with ID: ${strikeChannelName}`);
-      return 'Strikes successfully added';
+      return {
+        message: 'Strikes successfully added',
+        content: message,
+      };
     } else {
       Logger.error(`Strike channel with ID ${strikeChannelId} does not exist.`);
     }
-    return;
   } catch (error) {
-    Logger.error(error);
+    Logger.error(`Error in 'addStrike': ${error}`);
     await interaction.reply({
       content: 'Something went wrong.',
       ephemeral: true,

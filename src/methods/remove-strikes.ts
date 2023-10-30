@@ -1,8 +1,9 @@
-import { CommandInteraction, InteractionType, TextChannel } from 'discord.js';
-import prisma from '../utils/database/prisma';
+import { CommandInteraction, GuildMember, InteractionType, TextChannel } from 'discord.js';
 import { Logger } from '../logger';
-import { Members, Strikes } from '@prisma/client';
-import { removeStrikes } from '../utils/database/services/member-services';
+import { MemberTableServices } from '../database/services/member-services';
+import { StrikeReasonsServices } from '../database/services/strike-reason-services';
+import { ChannelTableService } from '../database/services/channel-services';
+import { StrikeValuesTableService } from '../database/services/strike-values-services';
 
 export const removeStrikeFromMember = async (interaction: CommandInteraction) => {
   if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
@@ -11,49 +12,72 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
   }
 
   try {
-    Logger.info('Beggining Remove Strike Service');
+    Logger.info('Beginning Remove Strike Service');
     const serverId = interaction.guildId!;
-    const { strikeChannelId, strikeChannelName } = await prisma.strikes.findUnique({
-      where: { serverId: serverId },
-    });
+    const { strikeChannelId, strikeChannelName } = await ChannelTableService.getChannelsByServerId(serverId);
+    if (!strikeChannelId || !strikeChannelName) {
+      Logger.error(`Guild Data is missing ${strikeChannelId} or ${strikeChannelName}`);
+      throw Error('Guild setup is incomplete.');
+    }
     Logger.info('Database entry found');
     const strike = ':x:';
     let message = '';
-    const length = interaction.options.data.length;
 
     Logger.info(`Server ID: ${serverId}`);
-    Logger.info(`Strike Channel Name & ID: ${strikeChannelName}: ${strikeChannelId}`);
-    let strikeAmount = 0;
-    let strikesToRemove = [];
 
-    for (let i = 1; i < length; i++) {
-      strikeAmount += 1;
-      const strike = interaction.options.getString(`strike${strikeAmount}`);
-      const reason = (interaction.options.get(`reason${strikeAmount}`)?.value as string) ?? '';
-      const strikeObject = {
-        strike,
-        reason,
+    const member = interaction.options.getMember(`user`) as GuildMember;
+    const strikeReason = interaction.options.getString(`strike`);
+    const removalReason = interaction.options.getString(`reason`) ?? 'Mistake';
+    const { strikeReasons } = await MemberTableServices.getAllStrikeReasonsByMember(member);
+
+    const strikeReasonExists = strikeReasons.some((reasonEntry) => reasonEntry.reason === strikeReason);
+
+    if (!strikeReasonExists) {
+      Logger.error('The strike attempting to be removed does not exist.');
+      return {
+        message: 'The strike attempting to be removed does not exist.',
+        content: undefined,
       };
-      strikesToRemove.push(strikeObject);
     }
-    const user = interaction.options.getUser(`user`)!;
-    const { id, username } = user;
-    const tag = `<@${id}>`;
-    // Logger.info(`Processing strike for User ID: ${id}, Username: ${username}, Reason: ${reason}`);
-    const { removeStrikeMessage, result } = await removeStrikes(user, serverId, strikesToRemove);
-    if (removeStrikeMessage === 'Member has no strikes to remove') {
-      return `${username} doesn't have enough strikes to remove ${strikeAmount} strike. Please try with less strikes or check the users strike amount using checkStrikes command`;
+
+    const strikeReasonRecords = await StrikeReasonsServices.getManyStrikeReasonsByMemberWithinResetPeriod(
+      member,
+      strikeReason,
+    );
+
+    const { reason, uniqueId, date } = strikeReasonRecords[0];
+
+    const strikeValue = await StrikeValuesTableService.getIndividualStrikeValueByInteraction(interaction, reason);
+
+    await MemberTableServices.updateMemberStrikesByMember(member, strikeValue);
+    await StrikeReasonsServices.deleteStrikeReasonEntryByMember(member, { uniqueId, reason, date });
+    const newRecord = await MemberTableServices.getAllStrikeReasonsByMember(member);
+
+    const newStrikeReasons = newRecord.strikeReasons.map((reasonEntry) => reasonEntry.reason);
+
+    const { displayName } = member;
+
+    let reasonList = '';
+    let j = 0;
+    newStrikeReasons.forEach((reason) => {
+      j++;
+      reasonList = reasonList + `\n${j}. ${reason}`;
+    });
+
+    const currentStrikesMessage = `Strikes:${reasonList}`;
+
+    message += `- ${reason} has been removed from ${displayName} due to ${removalReason}\n - ${displayName} now has ${
+      newRecord.strikes
+    } strikes ${strike.repeat(newRecord.strikes)}`;
+
+    if (newStrikeReasons.length !== 0) {
+      message = message + '\n\n' + currentStrikesMessage;
     }
-    Logger.info(result);
-    let strikes: number;
-    ({ strikes } = result as Members);
-    message += `Remove strike status for ${tag}\n - ${
-      removeStrikeMessage
-    }${username} now has ${strikes} strikes ${strike.repeat(strikes)}\n\n`;
 
     Logger.info(`Strike Message: ${message}`);
 
     const strikeChannel = interaction.guild?.channels.cache.get(strikeChannelId!.toString()) as TextChannel;
+
     if (strikeChannel) {
       await strikeChannel.send(message);
       Logger.info(`Strike message sent to strike channel with \n Name: ${strikeChannelName} \n ID: ${strikeChannelId}`);
@@ -63,7 +87,7 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
     }
     return;
   } catch (error) {
-    Logger.error(error);
+    Logger.error(`Error in removeStrikeFromMember: ${error}`);
     await interaction.reply({
       content: 'Something went wrong.',
       ephemeral: true,

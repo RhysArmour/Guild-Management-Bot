@@ -1,69 +1,105 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { CommandInteraction, CommandInteractionOptionResolver, InteractionType, Role, TextChannel } from 'discord.js';
-import {
-  updateServerTable,
-  updateStrikeTable,
-  updateTicketsTable,
-  updateRolesTable,
-  createStrikeTable,
-  createTicketsTable,
-  createRolesTable,
-  createServerTable
-} from '../services/bot-setup';
+import { CommandInteraction, InteractionType } from 'discord.js';
 import { Logger } from '../logger';
+import { IGuildChannels, IGuildRoles, IGuildLimits, IGuildServer } from '../interfaces/methods/bot-setup';
+import { ChannelTableService } from '../database/services/channel-services';
+import { RoleTableService } from '../database/services/role-services';
+import { LimitsTableService } from '../database/services/limits-services';
+import { ServerTableService } from '../database/services/server-services';
 
-const prisma = new PrismaClient();
-
-export const setupGuildData = async (interaction: CommandInteraction, serverData: any) => {
-  Logger.info('Guild Data Setup');
-
-  if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
-    Logger.error('Cannot complete setup. Interaction is not an Application Command');
-    return 'Cannot complete setup. Interaction is not an Application Command ';
+export class GuildSetup {
+  private static logAndThrowError(message: string, error: Error): void {
+    Logger.error(message, error);
+    throw new Error(message);
   }
 
-  try {
-    const serverId = interaction.guildId!.toString();
-
-    Logger.info(`Beggining Upsert operation on serverTable for server: \n Name: ${interaction.guild.name} \n Id: ${serverId}`)
-    await prisma.serverTable.upsert({
-      where: { serverId: serverId },
-      update: { ...updateServerTable(interaction, serverData) },
-      create: { ...createServerTable(interaction, serverData) },
-    });
-
-    Logger.info(`Beggining Upsert operation on strikes table for server: \n Name: ${interaction.guild.name} \n Id: ${serverId}`)
-    await prisma.strikes.upsert({
-      where: { serverId: serverId },
-      create: {
-        ...createStrikeTable(interaction, serverData),
-      },
-      update: { ...updateStrikeTable(interaction, serverData) },
-    });
-
-    Logger.info(`Beggining Upsert operation on tickets table for server: \n Name: ${interaction.guild.name} \n Id: ${serverId}`)
-    await prisma.tickets.upsert({
-      where: { serverId: serverId },
-      create: {
-        ...createTicketsTable(interaction, serverData),
-      },
-      update: { ...updateTicketsTable(interaction, serverData) },
-    });
-
-    Logger.info(`Beggining Upsert operation on roles table for server: \n Name: ${interaction.guild.name} \n Id: ${serverId}`)
-    await prisma.guildRole.upsert({
-      where: { serverId: serverId },
-      create: {
-        ...createRolesTable(interaction, serverData),
-      },
-      update: { ...updateRolesTable(interaction, serverData) },
-    });
-
-    Logger.info(`Server Data updates complete, returning response`)
-
-    return 'Bot Setup Completed'
-  } catch (error) {
-    Logger.error(`An error occurred while setting up guild data: ${error}`);
-    return 'Failed to set up guild data';
+  private static isApplicationCommand(interaction: CommandInteraction): boolean {
+    return interaction.type === InteractionType.ApplicationCommand && interaction.isChatInputCommand();
   }
-};
+
+  static async setupGuildChannels(interaction: CommandInteraction, channelData: IGuildChannels) {
+    if (!GuildSetup.isApplicationCommand(interaction)) {
+      return 'Cannot complete setup. Interaction is not an Application Command';
+    }
+
+    const logPrefix = 'Setting up guild channels';
+    try {
+      Logger.info(logPrefix);
+      const existingRecord = await ChannelTableService.getChannelsByServerId(interaction.guildId);
+
+      if (existingRecord) {
+        Logger.info('Record exists. Updating with new values.');
+        ChannelTableService.updateChannelEntryByInteraction(interaction, channelData);
+      } else {
+        Logger.info('No Existing Record. Creating Entry');
+        ChannelTableService.createChannelEntryByInteraction(interaction, channelData);
+      }
+    } catch (error) {
+      GuildSetup.logAndThrowError(`Error during guild channels setup`, error);
+    }
+  }
+
+  static async setupGuildRoles(interaction: CommandInteraction, roleData: IGuildRoles) {
+    if (!GuildSetup.isApplicationCommand(interaction)) {
+      return 'Cannot complete setup. Interaction is not an Application Command';
+    }
+
+    const logPrefix = 'Setting up guild roles';
+    try {
+      Logger.info(logPrefix);
+      const existingRecord = await RoleTableService.getRolesByServerId(interaction.guildId);
+
+      if (existingRecord) {
+        Logger.info('Record exists. Updating with new values.');
+        await RoleTableService.updateGuildRolesEntryByInteraction(interaction, roleData);
+      } else {
+        Logger.info('No Existing Record. Creating Entry');
+        await RoleTableService.createGuildRolesByInteraction(interaction, roleData);
+      }
+    } catch (error) {
+      GuildSetup.logAndThrowError(`Error during guild roles setup`, error);
+    }
+  }
+
+  static async setupGuildLimits(interaction: CommandInteraction, limitsData: IGuildLimits) {
+    if (!GuildSetup.isApplicationCommand(interaction)) {
+      return 'Cannot complete setup. Interaction is not an Application Command';
+    }
+
+    const logPrefix = 'Setting up guild limits';
+    try {
+      Logger.info(logPrefix);
+      const existingRecord = await LimitsTableService.getLimitsByServerId(interaction.guildId);
+
+      if (existingRecord) {
+        Logger.info('Record exists. Updating with new values.');
+        await LimitsTableService.updateGuildLimitsEntryByInteraction(interaction, limitsData);
+      } else {
+        Logger.info('No Existing Record. Creating Entry');
+        await LimitsTableService.createGuildLimitsByInteraction(interaction, limitsData);
+      }
+    } catch (error) {
+      GuildSetup.logAndThrowError(`Error during guild limits setup`, error);
+    }
+  }
+
+  static async setupGuildServer(interaction: CommandInteraction, serverData: IGuildServer) {
+    if (!GuildSetup.isApplicationCommand(interaction)) {
+      return 'Cannot complete setup. Interaction is not an Application Command';
+    }
+
+    try {
+      Logger.info('Setting up guild server');
+      const existingRecord = ServerTableService.getServerTableByServerId(interaction.guildId);
+
+      if (existingRecord) {
+        Logger.info('Record exists. Updating with new values.');
+        await ServerTableService.updateServerTableEntryByInteraction(interaction, serverData);
+      } else {
+        Logger.info('No Existing Record. Creating Entry');
+        await ServerTableService.createServerTableEntryByInteractionWithData(interaction, serverData);
+      }
+    } catch (error) {
+      GuildSetup.logAndThrowError(`Error during guild limits setup`, error);
+    }
+  }
+}

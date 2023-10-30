@@ -1,5 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { ApplicationCommandOptionType, PermissionFlagsBits } from 'discord.js';
+import { ApplicationCommandOptionType } from 'discord.js';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
 import { removeStrikeFromMember } from '../../methods/remove-strikes';
@@ -7,7 +6,7 @@ import { choices } from '../../utils/commandVariables';
 
 export default new Command({
   name: 'removestrikes',
-  description: 'remove desired number of strikes from player',
+  description: 'Remove desired number of strikes from a player',
   defaultMemberPermissions: 'KickMembers',
   options: [
     {
@@ -17,48 +16,33 @@ export default new Command({
       required: true,
     },
     {
-      name: 'strike1',
-      description: 'The 1st strike you want to remove from member',
+      name: 'strike',
+      description: 'The 1st strike you want to remove from the member',
       type: ApplicationCommandOptionType.String,
       required: true,
-      choices: choices
+      choices,
     },
     {
-      name: 'reason1',
-      description: 'Reason for removing strike from member (optional)',
+      name: 'reason',
+      description: 'Reason for removing the 1st strike (optional)',
       type: ApplicationCommandOptionType.String,
       required: false,
     },
-    {
-      name: 'strike2',
-      description: 'The 2nd strike you want to remove from member',
-      type: ApplicationCommandOptionType.String,
-      required: false,
-      choices: choices
-    },
-    {
-      name: 'reason2',
-      description: 'Reason for removing strike from member (optional)',
-      type: ApplicationCommandOptionType.String,
-      required: false,
-    },
-    {
-      name: 'strike3',
-      description: 'The 3rd strike you want to remove from member',
-      type: ApplicationCommandOptionType.String,
-      required: false,
-      choices: choices
-    },
-    {
-      name: 'reason3',
-      description: 'Reason for removing strike from member (optional)',
-      type: ApplicationCommandOptionType.String,
-      required: false,
-    },
-
   ],
   execute: async ({ interaction }) => {
-    const result = removeStrikeFromMember(interaction)
-    return result
+    try {
+      const result = await removeStrikeFromMember(interaction);
+      Logger.info(`Removed strikes for user ${interaction.user.username}`);
+      return {
+        content: result,
+        message: 'Strikes successfully removed.',
+      };
+    } catch (error) {
+      Logger.error(`Error while removing strikes: ${error}`);
+      await interaction.reply({
+        content: 'An error occurred while removing strikes.',
+        ephemeral: true,
+      });
+    }
   },
 });
