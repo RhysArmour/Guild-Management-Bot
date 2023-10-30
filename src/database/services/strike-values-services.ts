@@ -128,7 +128,7 @@ export class StrikeValuesTableService {
     }
   }
 
-  static async getAllGuildStrikeValueObjectByInteraction(interaction: CommandInteraction, serverId: string) {
+  static async getAllGuildStrikeValueObjectByServerId(serverId: string) {
     try {
       Logger.info('Starting getAllGuildStrikeValueObjectByInteraction method');
       const strikeValueEntry = await prisma.guildStrikeValues.findMany({

@@ -25,7 +25,6 @@ export const checkStrikes = async (interaction: CommandInteraction) => {
     Logger.info(`Strike Channel Name & ID: ${strikeChannelName}: ${strikeChannelId}`);
 
     for (let i = 0; i < length; i += 1) {
-      let reasonList = '';
       const member = interaction.options.getMember(`user${i + 1}`) as GuildMember;
       const { id, displayName } = member;
 
@@ -34,30 +33,12 @@ export const checkStrikes = async (interaction: CommandInteraction) => {
       const { strikes, lifetimeStrikes, strikeReasons } = await MemberTableServices.getAllStrikeReasonsByMember(member);
 
       const filteredReasons = await StrikeReasonsServices.filterStrikeByResetPeriod(strikeReasons, serverId);
-      const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByInteraction(
-        interaction,
+      const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(
         serverId,
       );
 
-      const reasonValues = guildStrikeValuesRecord.reduce((result, record) => {
-        result[record.strikeReason] = record.value;
-        return result;
-      }, {});
-
-      let j = 0;
-      filteredReasons.forEach((entry) => {
-        j++;
-        const strikeDate = new Date(entry.date);
-        const date = strikeDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-        if (entry.reason in reasonValues) {
-          reasonList =
-            reasonList + ` ${j}. ${date}: ${entry.reason} - ${strike.repeat(reasonValues[`${entry.reason}`])}\n`;
-        } else {
-          reasonList = reasonList + ` ${j}. ${date}: ${entry.reason} - :x:\n`;
-        }
-      });
-      const strikesForMonthMessage = `- strikes for ${month}:\n${reasonList}\n`;
+      const reasonList = await StrikeReasonsServices.getReasonsList(filteredReasons, guildStrikeValuesRecord);
+      const strikesForMonthMessage = `- strikes for ${month}:\n ${reasonList}\n`;
 
       if (reasonList !== '') {
         message += `${i + 1}. ${displayName} has ${strikes} strikes ${strike.repeat(

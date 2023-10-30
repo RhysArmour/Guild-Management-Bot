@@ -2,11 +2,14 @@ import { GuildMember } from 'discord.js';
 import { Logger } from '../logger';
 import { RoleTableService } from '../database/services/role-services';
 import { MemberTableServices } from '../database/services/member-services';
+import { strikeLimitReached } from './strike-limit';
 
 export const sortRole = async (oldMember: GuildMember, newMember: GuildMember) => {
   try {
     Logger.info(`Retrieving user info for: ${oldMember.displayName} from Database`);
-    const { guildRoleId, absenceRoleId } = await RoleTableService.getRolesByServerId(oldMember.guild.id);
+    const { guildRoleId, absenceRoleId, strikeLimitRoleId } = await RoleTableService.getRolesByServerId(
+      oldMember.guild.id,
+    );
 
     if (!guildRoleId || !absenceRoleId) {
       Logger.info('Bot has not been set up.');
@@ -43,6 +46,11 @@ export const sortRole = async (oldMember: GuildMember, newMember: GuildMember) =
         return;
       }
       return;
+    }
+
+    // Strike Limit Role Updated
+    if (!oldMember.roles.cache.has(strikeLimitRoleId) && newMember.roles.cache.has(strikeLimitRoleId)) {
+      await strikeLimitReached(oldMember);
     }
   } catch (error) {
     Logger.error(`Error while executing sort role: ${error}`);

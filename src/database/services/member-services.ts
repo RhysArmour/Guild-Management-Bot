@@ -4,6 +4,7 @@ import prisma from '../prisma';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { RoleTableService } from './role-services';
 import { Prisma } from '@prisma/client';
+import { LimitsTableService } from './limits-services';
 
 export class MemberTableServices {
   static async createMemberWithMember(member: GuildMember) {
@@ -39,10 +40,20 @@ export class MemberTableServices {
 
   static async updateMemberWithMember(member: GuildMember, data: Prisma.GuildMembersTableUpdateInput) {
     Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
-    return prisma.guildMembersTable.update({
+    const record = await prisma.guildMembersTable.update({
       where: { uniqueId: `${member.guild.id} - ${member.id}` },
       data,
     });
+
+    const { strikeLimit } = await LimitsTableService.getLimitsByServerId(member.guild.id);
+
+    if (record.strikes >= strikeLimit) {
+      Logger.info(`${member.displayName} reached strike limit. Adding strike limit role.`);
+      const { strikeLimitRoleId } = await RoleTableService.getRolesByServerId(member.guild.id);
+      const role = await member.guild.roles.fetch(`${strikeLimitRoleId}`);
+      member.roles.add(role);
+    }
+    return record;
   }
 
   static async updateAllStrikesWithServerId(serverId: string) {
@@ -58,7 +69,7 @@ export class MemberTableServices {
   static async updateMemberStrikesByMember(member: GuildMember, strikeValue: number) {
     Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
     const existingRecord = await this.getMemberWithMember(member);
-    return prisma.guildMembersTable.updateMany({
+    return prisma.guildMembersTable.update({
       where: { uniqueId: `${member.guild.id} - ${member.id}` },
       data: {
         strikes: existingRecord.strikes - strikeValue,

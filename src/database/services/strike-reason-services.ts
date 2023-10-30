@@ -2,7 +2,7 @@ import { Logger } from '../../logger';
 import prisma from '../prisma';
 import { GuildMember } from 'discord.js';
 import { IStrikeReasons } from '../../interfaces/database/strike-reason';
-import { MemberStrikeReasons, Prisma } from '@prisma/client';
+import { GuildStrikeValues, MemberStrikeReasons, Prisma } from '@prisma/client';
 import { ServerTableService } from './server-services';
 
 export class StrikeReasonsServices {
@@ -202,5 +202,29 @@ export class StrikeReasonsServices {
       Logger.error(`Error getting strike reason entry: ${error}`);
       throw new Error('Failed to get strike reason entry');
     }
+  }
+
+  static async getReasonsList(filteredReasons: MemberStrikeReasons[], guildStrikeValuesRecord: GuildStrikeValues[]) {
+    let reasonList = '';
+    const strike = ':x:';
+    const reasonValues = guildStrikeValuesRecord.reduce((result, record) => {
+      result[record.strikeReason] = record.value;
+      return result;
+    }, {});
+
+    let j = 0;
+    filteredReasons.forEach((entry) => {
+      j++;
+      const strikeDate = new Date(entry.date);
+      const date = strikeDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      if (entry.reason in reasonValues) {
+        reasonList =
+          reasonList + ` ${j}. ${date}: ${entry.reason} - ${strike.repeat(reasonValues[`${entry.reason}`])}\n`;
+      } else {
+        reasonList = reasonList + ` ${j}. ${date}: ${entry.reason} - :x:\n`;
+      }
+    });
+    return reasonList;
   }
 }
