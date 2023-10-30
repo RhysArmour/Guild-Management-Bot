@@ -3,7 +3,6 @@ import prisma from '../prisma';
 
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { RoleTableService } from './role-services';
-import { Prisma } from '@prisma/client';
 import { LimitsTableService } from './limits-services';
 
 export class MemberTableServices {
@@ -38,11 +37,16 @@ export class MemberTableServices {
     });
   }
 
-  static async updateMemberWithMember(member: GuildMember, data: Prisma.GuildMembersTableUpdateInput) {
-    Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
+  static async addMemberStrikesWithMember(member: GuildMember, strikeValue: number) {
+    Logger.info(`Adding Strikes to member: ${member.id} for server: ${member.guild.name}`);
+    const existingRecord = await this.getMemberWithMember(member);
+
     const record = await prisma.guildMembersTable.update({
       where: { uniqueId: `${member.guild.id} - ${member.id}` },
-      data,
+      data: {
+        strikes: existingRecord.strikes + strikeValue,
+        lifetimeStrikes: existingRecord.lifetimeStrikes + strikeValue,
+      },
     });
 
     const { strikeLimit } = await LimitsTableService.getLimitsByServerId(member.guild.id);

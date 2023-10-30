@@ -1,2 +1,2 @@
-export { CommandType } from './Command'
-export { DiscordUser } from './DiscordUser'
+export { CommandType } from './Command';
+export { DiscordUser } from './DiscordUser';

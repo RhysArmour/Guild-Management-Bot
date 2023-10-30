@@ -32,11 +32,13 @@ export default new Command({
   execute: async ({ interaction }) => {
     try {
       const result = await removeStrikeFromMember(interaction);
-      Logger.info(`Removed strikes for user ${interaction.user.username}`);
-      return {
-        content: result,
-        message: 'Strikes successfully removed.',
-      };
+      if (result.content !== undefined) {
+        Logger.info(`Removed strikes for user ${interaction.user.username}`);
+        return {
+          content: result,
+          message: 'Strikes successfully removed.',
+        };
+      }
     } catch (error) {
       Logger.error(`Error while removing strikes: ${error}`);
       await interaction.reply({

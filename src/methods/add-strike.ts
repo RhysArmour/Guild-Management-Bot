@@ -38,11 +38,9 @@ export const addStrike = async (interaction: CommandInteraction) => {
       const member = interaction.options.getMember(`user${i + 1}`) as GuildMember;
       const reason = (interaction.options.get(`reason${i + 1}`)?.value as string) ?? '';
 
-      Logger.info(`${member.displayName}\n${reason}`);
+      if (reason.includes('Ticket Strike')) Logger.info(`${member.displayName}\n${reason}`);
       const { id, displayName } = member;
       const tag = `<@${id}>`;
-      let strikes: number;
-      let lifetimeStrikes: number;
 
       Logger.info(`Processing strike for User ID: ${id}, Username: ${displayName}, Reason: ${reason}`);
 
@@ -52,27 +50,18 @@ export const addStrike = async (interaction: CommandInteraction) => {
         memberRecord = await MemberTableServices.createMemberWithMember(member);
       }
 
-      const strikeValue = await StrikeValuesTableService.getStrikeValueObjectByInteraction(interaction, reason);
+      const strikeValue = await StrikeValuesTableService.getIndividualStrikeValueByInteraction(interaction, reason);
 
-      if (strikeValue) {
-        strikes = memberRecord.strikes + strikeValue.value;
-        lifetimeStrikes = memberRecord.lifetimeStrikes + strikeValue.value;
-      } else {
-        strikes = memberRecord.strikes + 1;
-        lifetimeStrikes = memberRecord.lifetimeStrikes + 1;
-      }
-
-      const result = await MemberTableServices.updateMemberWithMember(member, { strikes, lifetimeStrikes });
-      const reasons = await StrikeReasonsServices.createStrikeReasonByMember(member, { reason, name: displayName, id });
+      const result = await MemberTableServices.addMemberStrikesWithMember(member, strikeValue);
+      const reasons = await StrikeReasonsServices.createStrikeReasonByMember(member, reason);
 
       Logger.info(result);
       Logger.info(`Reasons: ${reasons}`);
 
-      message += `- ${strike} has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${strikes} strikes ${strike.repeat(
-        strikes,
-      )}\n\n`;
-      reply += `- Strike for ${displayName} has been updated. ${displayName} now has ${strikes} strikes\n\n`;
-      Logger.info('🚀 ~ file: add-strike.ts:71 ~ addStrike ~ message:', message);
+      message += `- ${strike} has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${
+        result.strikes
+      } strikes ${strike.repeat(result.strikes)}\n\n`;
+      reply += `- Strike for ${displayName} has been updated. ${displayName} now has ${result.strikes} strikes\n\n`;
     }
 
     Logger.info(`Strike Message: ${message}`);
@@ -88,7 +77,7 @@ export const addStrike = async (interaction: CommandInteraction) => {
       await strikeChannel.send(message);
       Logger.info(`Strike message sent to strike channel with ID: ${strikeChannelName}`);
       return {
-        message: 'Strikes successfully added',
+        message: 'strikes successfully added',
         content: message,
       };
     } else {

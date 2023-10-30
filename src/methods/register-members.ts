@@ -28,7 +28,7 @@ export const registerMembers = async (interaction: CommandInteraction) => {
   try {
     const { guildRoleId } = await RoleTableService.getRolesByServerId(interaction.guildId);
     const members = await interaction.guild.members.fetch();
-    
+
     const actions = await Promise.all(members.map((member) => processMember(member, guildRoleId)));
     const newMembers = actions.filter((action) => action?.action === 'created').map((action) => action.displayName);
     const deletedMembers = actions.filter((action) => action?.action === 'deleted').map((action) => action.displayName);

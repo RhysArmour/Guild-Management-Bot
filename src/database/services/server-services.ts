@@ -143,4 +143,25 @@ export class ServerTableService {
       throw new Error('Failed to get server entry');
     }
   }
+
+  static async updateLastStrikeResetEntryByServerId(serverId: string) {
+    try {
+      const date = new Date();
+      let lastStrikeReset: Date;
+      if (date.getMonth() === 0) {
+        lastStrikeReset = new Date(date.getFullYear() - 1, date.getMonth() + 11, 1);
+      } else {
+        lastStrikeReset = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+      }
+      await prisma.serverTable.update({
+        where: { serverId },
+        data: {
+          lastStrikeReset,
+        },
+      });
+    } catch (error) {
+      Logger.error(`Error while updating last strike reset ${error}`);
+      throw error;
+    }
+  }
 }

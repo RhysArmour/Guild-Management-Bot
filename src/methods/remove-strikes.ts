@@ -26,9 +26,14 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
     Logger.info(`Server ID: ${serverId}`);
 
     const member = interaction.options.getMember(`user`) as GuildMember;
-    const strikeReason = interaction.options.getString(`strike`);
+    let strikeReason = interaction.options.getString(`strike`);
     const removalReason = interaction.options.getString(`reason`) ?? 'Mistake';
     const { strikeReasons } = await MemberTableServices.getAllStrikeReasonsByMember(member);
+
+    if (strikeReason.includes('Ticket Strike')) {
+      const ticketStrikes = await StrikeReasonsServices.getTicketStrikesByMemberWithinResetPeriod(member);
+      strikeReason = ticketStrikes[0].reason;
+    }
 
     const strikeReasonExists = strikeReasons.some((reasonEntry) => reasonEntry.reason === strikeReason);
 
@@ -81,11 +86,17 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
     if (strikeChannel) {
       await strikeChannel.send(message);
       Logger.info(`Strike message sent to strike channel with \n Name: ${strikeChannelName} \n ID: ${strikeChannelId}`);
-      return 'Strikes removed successfully';
+      return {
+        content: message,
+        message: 'Strikes removed successfully',
+      };
     } else {
       Logger.error(`Strike channel with ID ${strikeChannelId} does not exist.`);
     }
-    return;
+    return {
+      content: undefined,
+      message: 'Something Went wrong',
+    };
   } catch (error) {
     Logger.error(`Error in removeStrikeFromMember: ${error}`);
     await interaction.reply({

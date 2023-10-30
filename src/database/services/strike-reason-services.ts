@@ -31,24 +31,24 @@ export class StrikeReasonsServices {
     return result;
   }
 
-  static async createStrikeReasonByMember(member: GuildMember, data: IStrikeReasons) {
+  static async createStrikeReasonByMember(member: GuildMember, reason: string) {
     try {
       Logger.info('Starting createStrikeReasonByMember method');
       const serverId = member.guild.id;
-      const { name, id, reason } = data;
+      const { displayName, id } = member;
       const uniqueId = `${serverId} - ${id}`;
 
       const newReason = await prisma.memberStrikeReasons.create({
         data: {
           date: new Date().toISOString(),
           serverId,
-          name,
+          name: displayName,
           reason,
           member: {
             connectOrCreate: {
               where: { uniqueId },
               create: {
-                name,
+                name: displayName,
                 uniqueId,
                 serverName: member.guild.name,
                 memberId: id,
@@ -74,7 +74,7 @@ export class StrikeReasonsServices {
         },
       });
 
-      Logger.info(`Created strike reason entry for member ${name} on server ${member.guild.name}`);
+      Logger.info(`Created strike reason entry for member ${displayName} on server ${member.guild.name}`);
       return newReason;
     } catch (error) {
       Logger.error(`Error creating strike reason entry: ${error}`);
@@ -188,6 +188,35 @@ export class StrikeReasonsServices {
 
       const reasonEntries = await prisma.memberStrikeReasons.findMany({
         where: { uniqueId, reason },
+      });
+      if (reasonEntries) {
+        Logger.info(`Retrieved strike reason entries for member ${member.id} on server ${member.guild.name}`);
+      } else {
+        Logger.warn(`Strike reason entries not found for member ${member.id} on server ${member.guild.name}`);
+      }
+
+      const result = this.filterStrikeByResetPeriod(reasonEntries, serverId);
+
+      return result;
+    } catch (error) {
+      Logger.error(`Error getting strike reason entry: ${error}`);
+      throw new Error('Failed to get strike reason entry');
+    }
+  }
+
+  static async getTicketStrikesByMemberWithinResetPeriod(member: GuildMember) {
+    try {
+      Logger.info('Starting getTicketStrikesByMemberWithinResetPeriod method');
+      const serverId = member.guild.id;
+      const uniqueId = `${serverId} - ${member.id}`;
+
+      const reasonEntries = await prisma.memberStrikeReasons.findMany({
+        where: {
+          uniqueId,
+          reason: {
+            startsWith: 'Ticket Strike',
+          },
+        },
       });
       if (reasonEntries) {
         Logger.info(`Retrieved strike reason entries for member ${member.id} on server ${member.guild.name}`);

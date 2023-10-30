@@ -33,9 +33,7 @@ export const checkStrikes = async (interaction: CommandInteraction) => {
       const { strikes, lifetimeStrikes, strikeReasons } = await MemberTableServices.getAllStrikeReasonsByMember(member);
 
       const filteredReasons = await StrikeReasonsServices.filterStrikeByResetPeriod(strikeReasons, serverId);
-      const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(
-        serverId,
-      );
+      const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(serverId);
 
       const reasonList = await StrikeReasonsServices.getReasonsList(filteredReasons, guildStrikeValuesRecord);
       const strikesForMonthMessage = `- strikes for ${month}:\n ${reasonList}\n`;

@@ -21,12 +21,6 @@ export default new Command({
       type: ApplicationCommandOptionType.Integer,
       required: true,
     },
-    {
-      name: 'triggerphrase',
-      description: 'Phrase which will trigger ticket strikes',
-      type: ApplicationCommandOptionType.String,
-      required: true,
-    },
   ],
   execute: async ({ interaction }) => {
     try {
@@ -72,6 +66,5 @@ function extractServerData(interaction) {
   return {
     ticketLimit: interaction.options.getInteger('ticketlimit'),
     strikeLimit: interaction.options.getInteger('strikelimit'),
-    triggerPhrase: interaction.options.getString('triggerphrase'),
   };
 }
