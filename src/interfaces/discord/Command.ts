@@ -17,6 +17,7 @@ interface ExecuteOptions {
   args: CommandInteractionOptionResolver;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExecuteFunction = (options: ExecuteOptions) => any;
 
 export type CommandType = {

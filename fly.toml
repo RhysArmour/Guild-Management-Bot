@@ -1,8 +1,16 @@
-# fly.toml file generated for guildmanagementbot on 2023-04-16T15:48:28+01:00
+# fly.toml app configuration file generated for devgmb on 2023-11-01T01:41:30Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "guildmanagementbot"
 primary_region = "lhr"
 
-[mounts]
-  source="bot_data"
-  destination="/data"
+[build]
+
+[[mounts]]
+  source = "bot_data"
+  destination = "/data"
+
+  [deploy]
+  release_command = "npx prisma db push"
