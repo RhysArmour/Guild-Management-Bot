@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ServerTable {
+  serverId          String              @id @unique
+  serverName        String
+  strikeResetPeriod Int                 @default(1)
+  lastStrikeReset   DateTime?
+  triggerPhrase     String?
+  createdDate       DateTime
+  updatedDate       DateTime
+  members           GuildMembersTable[]
+  channels          GuildChannelsTable?
+  guildStrikes      GuildStrikeValues[]
+  limits            GuildLimitsTable?
+  roles             GuildRolesTable?
+}
+
+model GuildChannelsTable {
+  serverId               String      @unique
+  strikeChannelName      String
+  strikeChannelId        String      @unique
+  strikeLimitChannelName String
+  strikeLimitChannelId   String      @unique
+  ticketChannelName      String
+  ticketChannelId        String      @unique
+  createdDate            DateTime
+  updatedDate            DateTime
+  server                 ServerTable @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
+}
+
+model GuildLimitsTable {
+  serverId    String      @id @unique
+  ticketLimit Int
+  strikeLimit Int
+  createdDate DateTime
+  updatedDate DateTime
+  server      ServerTable @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
+}
+
+model GuildRolesTable {
+  serverId            String      @id @unique
+  guildRoleId         String      @unique
+  guildRoleName       String      @unique
+  absenceRoleId       String      @unique
+  absenceRoleName     String
+  strikeLimitRoleId   String      @unique
+  strikeLimitRoleName String
+  createdDate         DateTime
+  updatedDate         DateTime
+  server              ServerTable @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
+}
+
+model GuildStrikeValues {
+  serverId     String
+  uniqueId     String      @unique
+  strikeReason String
+  value        Int
+  createdDate  DateTime
+  updatedDate  DateTime
+  server       ServerTable @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
+}
+
+model GuildMembersTable {
+  uniqueId                String                @id
+  serverId                String
+  serverName              String
+  memberId                String
+  name                    String
+  strikes                 Int                   @default(0)
+  strikeReasons           MemberStrikeReasons[]
+  lifetimeStrikes         Int
+  absent                  Boolean
+  currentAbsenceStartDate DateTime?
+  totalAbsenceDuration    Int?
+  createdDate             DateTime
+  updatedDate             DateTime
+  server                  ServerTable           @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
+
+  @@index([uniqueId], name: "idx_uniqueId")
+}
+
+model MemberStrikeReasons {
+  id       Int               @id @default(autoincrement())
+  serverId String
+  name     String
+  uniqueId String
+  date     DateTime
+  reason   String
+  member   GuildMembersTable @relation(fields: [uniqueId], references: [uniqueId], onDelete: Cascade)
+
+  @@unique([uniqueId, date, reason], name: "unique_reason")
+}
