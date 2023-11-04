@@ -93,6 +93,7 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
     } else {
       Logger.error(`Strike channel with ID ${strikeChannelId} does not exist.`);
     }
+    Logger.info('Unkown error occured during remove-strikes');
     return {
       content: undefined,
       message: 'Something Went wrong',
