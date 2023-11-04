@@ -45,7 +45,7 @@ export const checkStrikes = async (interaction: CommandInteraction) => {
       } else {
         message += `${i + 1}. ${displayName} has ${strikes} strikes ${strike.repeat(
           strikes,
-        )} and ${lifetimeStrikes} Lifetime Strikes\n - ${displayName} has had no strikes in ${month}.`;
+        )} and ${lifetimeStrikes} Lifetime Strikes\n - ${displayName} has had no strikes in ${month}.\n`;
       }
     }
 

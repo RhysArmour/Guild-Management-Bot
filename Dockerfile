@@ -1,5 +1,5 @@
     FROM node:latest
-    WORKDIR /guild-management-bot
+    WORKDIR /dev-gmb
     COPY package.json .
     RUN npm install\
         && npm install typescript -g
