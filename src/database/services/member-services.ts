@@ -28,6 +28,7 @@ export class MemberTableServices {
         },
         memberId: member.id,
         name,
+        username: member.user.username,
         strikes: 0,
         lifetimeStrikes: 0,
         absent: false,
@@ -78,6 +79,16 @@ export class MemberTableServices {
       data: {
         strikes: existingRecord.strikes - strikeValue,
         lifetimeStrikes: existingRecord.lifetimeStrikes - strikeValue,
+      },
+    });
+  }
+
+  static async updateMemberUsername(member: GuildMember) {
+    Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
+    return prisma.guildMembersTable.update({
+      where: { uniqueId: `${member.guild.id} - ${member.id}` },
+      data: {
+        username: member.user.username,
       },
     });
   }

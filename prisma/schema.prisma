@@ -76,6 +76,7 @@ model GuildMembersTable {
   serverName              String
   memberId                String
   name                    String
+  username                String
   strikes                 Int                   @default(0)
   strikeReasons           MemberStrikeReasons[]
   lifetimeStrikes         Int

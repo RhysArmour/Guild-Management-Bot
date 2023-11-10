@@ -7,6 +7,13 @@ const processMember = async (member, guildRoleId) => {
   const existingMember = await MemberTableServices.getMemberWithMember(member);
 
   if (!existingMember && member.roles.cache.has(guildRoleId)) {
+    if (!existingMember.username) {
+      await MemberTableServices.updateMemberUsername(member);
+      return {
+        action: 'updated',
+        displayName: member.displayName,
+      };
+    }
     await MemberTableServices.createMemberWithMember(member);
     Logger.info(`Created member ${member.displayName}`);
     return {
