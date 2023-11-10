@@ -166,4 +166,14 @@ export class MemberTableServices {
       },
     });
   }
+
+  static async getAllMembersByServerId(serverId: string) {
+    Logger.info(`Fetching all members in server: ID: ${serverId}`);
+    return prisma.guildMembersTable.findMany({
+      where: { serverId },
+      select: {
+        name: true,
+      },
+    });
+  }
 }
