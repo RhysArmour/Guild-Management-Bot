@@ -43,7 +43,7 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     }
 
     const members = await MemberTableServices.getAllMembersByServerId(interaction.guildId);
-    const membersNames = members.map((member) => member.name);
+    const membersNames = members.map((member) => member.username);
 
     const filterList = removeDuplicates([...usernames, ...membersNames]);
 
@@ -62,3 +62,4 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     };
   }
 };
+

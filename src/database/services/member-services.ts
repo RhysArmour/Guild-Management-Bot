@@ -184,6 +184,7 @@ export class MemberTableServices {
       where: { serverId },
       select: {
         name: true,
+        username: true,
       },
     });
   }
