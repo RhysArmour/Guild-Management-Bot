@@ -3,6 +3,7 @@ import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 
 const fetchMessageReactions = async (message) => {
+  Logger.info('Fetching message reactions');
   const reactions = message.reactions.cache;
   const reactedUsers = [];
 
@@ -15,6 +16,7 @@ const fetchMessageReactions = async (message) => {
 };
 
 function removeDuplicates(arrayOfStrings) {
+  Logger.info('Removing duplicates');
   return arrayOfStrings.filter(
     (element, index) =>
       !arrayOfStrings.some((otherElement, otherIndex) => index !== otherIndex && element === otherElement),
@@ -31,28 +33,23 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     const message = await guildChannel.messages.fetch(messageId);
 
     const reactedUsers = await fetchMessageReactions(message);
-
     const usernames = reactedUsers.flatMap((user) => user.map((u) => u.username));
 
-    const members = await MemberTableServices.getAllMembersByServerId(interaction.guildId);
-    console.log('🚀 ~ file: get-reactions.ts:31 ~ getReactions ~ members:', ...members);
-
-    const membersNames = [];
-    members.forEach((member) => {
-      membersNames.push(member.name);
-    });
-
-    const membersArray = usernames.concat(membersNames);
-    console.log('🚀 ~ file: get-reactions.ts:34 ~ getReactions ~ membersArray:', membersArray);
-
-    const filterList = removeDuplicates(membersArray);
-    console.log('🚀 ~ file: get-reactions.ts:42 ~ filterList ~ filterList:', filterList);
-
-    let formattedResponse = '';
-    for (const username of filterList) {
-      formattedResponse += `- ${username}\n`;
+    if (usernames.length === 0) {
+      return {
+        content: undefined,
+        message: 'There are currently no reactions on this message',
+      };
     }
 
+    const members = await MemberTableServices.getAllMembersByServerId(interaction.guildId);
+    const membersNames = members.map((member) => member.name);
+
+    const filterList = removeDuplicates([...usernames, ...membersNames]);
+
+    const formattedResponse = filterList.map((username) => `- ${username}`).join('\n');
+
+    Logger.info('Finished getReactions Method');
     return {
       content: undefined,
       message: `The following have not reacted:\n${formattedResponse}`,
