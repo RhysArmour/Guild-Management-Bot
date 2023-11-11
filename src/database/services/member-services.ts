@@ -28,6 +28,7 @@ export class MemberTableServices {
         },
         memberId: member.id,
         name,
+        username: member.user.username,
         strikes: 0,
         lifetimeStrikes: 0,
         absent: false,
@@ -78,6 +79,16 @@ export class MemberTableServices {
       data: {
         strikes: existingRecord.strikes - strikeValue,
         lifetimeStrikes: existingRecord.lifetimeStrikes - strikeValue,
+      },
+    });
+  }
+
+  static async updateMemberUsername(member: GuildMember) {
+    Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
+    return prisma.guildMembersTable.update({
+      where: { uniqueId: `${member.guild.id} - ${member.id}` },
+      data: {
+        username: member.user.username,
       },
     });
   }
@@ -138,8 +149,15 @@ export class MemberTableServices {
     });
   }
 
+  static async deleteMemberWithServerIdAndDisplayName(serverId: string, displayName: string) {
+    Logger.info(`Deleting member with displayName: ${displayName} for server: ${serverId}`);
+    return prisma.guildMembersTable.deleteMany({
+      where: { serverId, name: displayName },
+    });
+  }
+
   static async getMemberWithMember(member: GuildMember) {
-    Logger.info(`Fetching member with ID: ${member.id} for server: ${member.guild.name}`);
+    Logger.info(`Fetching member with name: ${member.displayName} for server: ${member.guild.name}`);
     return prisma.guildMembersTable.findUnique({
       where: { uniqueId: `${member.guild.id} - ${member.id}` },
     });
@@ -171,6 +189,17 @@ export class MemberTableServices {
     Logger.info(`Fetching all members in server: ID: ${serverId}`);
     return prisma.guildMembersTable.findMany({
       where: { serverId },
+      select: {
+        name: true,
+        username: true,
+      },
+    });
+  }
+
+  static async getAllMembersDisplayNamesByServerId(serverId: string, username) {
+    Logger.info(`Fetching all members in server: ID: ${serverId}`);
+    return prisma.guildMembersTable.findFirst({
+      where: { serverId, username },
       select: {
         name: true,
       },

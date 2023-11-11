@@ -49,6 +49,7 @@ export class StrikeReasonsServices {
               where: { uniqueId },
               create: {
                 name: displayName,
+                username: member.user.username,
                 uniqueId,
                 serverName: member.guild.name,
                 memberId: id,
