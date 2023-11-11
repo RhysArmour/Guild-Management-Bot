@@ -45,9 +45,18 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     const members = await MemberTableServices.getAllMembersByServerId(interaction.guildId);
     const membersNames = members.map((member) => member.username);
 
-    const filterList = removeDuplicates([...usernames, ...membersNames]);
+    const filteredList = removeDuplicates([...usernames, ...membersNames]);
 
-    const formattedResponse = filterList.map((username) => `- ${username}`).join('\n');
+    console.log('FILTERED LIST', filteredList);
+
+    const displayNames = await Promise.all(
+      filteredList.map(async (username) => {
+        const nameRecord = await MemberTableServices.getAllMembersDisplayNamesByServerId(interaction.guildId, username);
+        return nameRecord.name;
+      }),
+    );
+
+    const formattedResponse = displayNames.map((name) => `- ${name}`).join('\n');
 
     Logger.info('Finished getReactions Method');
     return {

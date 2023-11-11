@@ -149,8 +149,15 @@ export class MemberTableServices {
     });
   }
 
+  static async deleteMemberWithServerIdAndDisplayName(serverId: string, displayName: string) {
+    Logger.info(`Deleting member with displayName: ${displayName} for server: ${serverId}`);
+    return prisma.guildMembersTable.deleteMany({
+      where: { serverId, name: displayName },
+    });
+  }
+
   static async getMemberWithMember(member: GuildMember) {
-    Logger.info(`Fetching member with ID: ${member.id} for server: ${member.guild.name}`);
+    Logger.info(`Fetching member with name: ${member.displayName} for server: ${member.guild.name}`);
     return prisma.guildMembersTable.findUnique({
       where: { uniqueId: `${member.guild.id} - ${member.id}` },
     });
@@ -185,6 +192,16 @@ export class MemberTableServices {
       select: {
         name: true,
         username: true,
+      },
+    });
+  }
+
+  static async getAllMembersDisplayNamesByServerId(serverId: string, username) {
+    Logger.info(`Fetching all members in server: ID: ${serverId}`);
+    return prisma.guildMembersTable.findFirst({
+      where: { serverId, username },
+      select: {
+        name: true,
       },
     });
   }
