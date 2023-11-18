@@ -18,3 +18,23 @@ export const choices = [
   },
   { name: 'RAID - Missed Raid', value: 'RAID - Missed Raid' },
 ];
+
+export const autocompleteChoices = [
+  'MISC - Ticket Strike',
+  'MISC - Failed Discord Check',
+  'TB - Phase 1 Offense',
+  'TB - Phase 2 Offense',
+  'TB - Phase 3 Offense',
+  'TB - Phase 4 Offense',
+  'TB - Phase 5 Offense',
+  'TB - Phase 6 Offense',
+  'TB - Missed Special Mission',
+  'TB - Failed Special Mission without Officer Aid',
+  'TB - Failed to place assigned Ops',
+  'TB - Filled Ops that were not assigned',
+  'TW - Missed Signup',
+  'TW - Missed Defense Phase',
+  'TW - Missed Offense Phase',
+  'TW - Did not meet minimum rogue actions',
+  'RAID - Missed Raid',
+];
