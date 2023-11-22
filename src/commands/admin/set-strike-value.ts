@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import { Logger } from '../../logger';
-import { choices } from '../../utils/commandVariables';
+import { strikeChoicesAutocomplete } from '../../utils/helpers/commandVariables';
 import { StrikeValuesTableService } from '../../database/services/strike-values-services';
 
 export default {
@@ -13,7 +13,7 @@ export default {
       name: 'strike',
       description: 'The Strike you wish to change the value of.',
       required: true,
-      choices,
+      autocomplete: true,
     },
     {
       type: ApplicationCommandOptionType.Integer,
@@ -22,6 +22,9 @@ export default {
       required: true,
     },
   ],
+  autocomplete: async ({ interaction }) => {
+    await strikeChoicesAutocomplete(interaction);
+  },
   execute: async ({ interaction }) => {
     try {
       Logger.info('Add Strikes command executed');

@@ -8,7 +8,9 @@ const fetchMessageReactions = async (message) => {
   const reactedUsers = [];
 
   for (const reaction of reactions.values()) {
+    console.log('REACTION', reaction);
     const users = await reaction.users.fetch();
+    console.log('USERS', users);
     reactedUsers.push(users);
   }
 
@@ -33,6 +35,7 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     const message = await guildChannel.messages.fetch(messageId);
 
     const reactedUsers = await fetchMessageReactions(message);
+    console.log('REACTEDUSERS', reactedUsers);
     const usernames = reactedUsers.flatMap((user) => user.map((u) => u.username));
 
     if (usernames.length === 0) {

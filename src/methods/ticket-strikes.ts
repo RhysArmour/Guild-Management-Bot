@@ -3,7 +3,7 @@ import { RoleTableService } from '../database/services/role-services';
 import { StrikeValuesTableService } from '../database/services/strike-values-services';
 import { Logger } from '../logger';
 import { Message } from 'discord.js';
-import { choices } from '../utils/commandVariables';
+import { choices } from '../utils/helpers/commandVariables';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
 
 const isolateTickets = (message: Message) => {

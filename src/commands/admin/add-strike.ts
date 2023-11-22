@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import { Logger } from '../../logger';
-import { autocompleteChoices } from '../../utils/commandVariables';
+import { strikeChoicesAutocomplete } from '../../utils/helpers/commandVariables';
 import { addStrike } from '../../methods/add-strike';
 import { Command } from '../../classes/Commands';
 
@@ -77,23 +77,7 @@ export default new Command({
     // Add more user and reason options as needed
   ],
   autocomplete: async ({ interaction }) => {
-    const focusedOption = interaction.options.getFocused(true);
-    console.log(focusedOption);
-    let choices;
-    if (focusedOption.value.includes('')) {
-      choices = autocompleteChoices.slice(0, 25);
-    } else if (focusedOption.value.includes('TW')) {
-      choices = autocompleteChoices.filter((choice) => choice.startsWith('TW'));
-    } else if (focusedOption.value.includes('RAID')) {
-      choices = autocompleteChoices.filter((choice) => choice.startsWith('RAID'));
-    } else if (focusedOption.value.includes('TB')) {
-      choices = autocompleteChoices.filter((choice) => choice.startsWith('TB'));
-    }
-
-    console.log(choices);
-
-    const filtered = choices.filter((choice) => choice.startsWith(focusedOption.value));
-    await interaction.respond(filtered.map((choice) => ({ name: choice, value: choice })));
+    await strikeChoicesAutocomplete(interaction);
   },
   execute: async ({ interaction }) => {
     try {

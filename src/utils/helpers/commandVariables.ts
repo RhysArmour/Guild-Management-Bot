@@ -1,3 +1,5 @@
+import { AutocompleteInteraction } from 'discord.js';
+
 export const choices = [
   { name: 'Ticket Strike', value: 'Ticket Strike' },
   { name: 'TB - Phase 1 Offense', value: 'TB - Phase 1 Offense' },
@@ -38,3 +40,15 @@ export const autocompleteChoices = [
   'TW - Did not meet minimum rogue actions',
   'RAID - Missed Raid',
 ];
+
+export const strikeChoicesAutocomplete = async (interaction: AutocompleteInteraction) => {
+  const focusedOption = interaction.options.getFocused(true);
+  let choices = autocompleteChoices.slice(0, 25);
+  let filtered = choices.filter((choice) => choice.toLowerCase().includes(focusedOption.value.toLowerCase()));
+  if (!filtered) {
+    choices = autocompleteChoices.slice(26);
+    filtered = choices.filter((choice) => choice.includes(focusedOption.value));
+  }
+
+  return await interaction.respond(filtered.map((choice) => ({ name: choice, value: choice })));
+};
