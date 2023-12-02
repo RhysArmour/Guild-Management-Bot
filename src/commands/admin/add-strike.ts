@@ -1,9 +1,10 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import { Logger } from '../../logger';
-import { choices } from '../../utils/commandVariables';
+import { strikeChoicesAutocomplete } from '../../utils/helpers/commandVariables';
 import { addStrike } from '../../methods/add-strike';
+import { Command } from '../../classes/Commands';
 
-export default {
+export default new Command({
   name: 'addstrikes',
   description: 'Adds strikes for one or multiple members',
   defaultMemberPermissions: 'KickMembers',
@@ -19,7 +20,7 @@ export default {
       name: 'reason1',
       description: "First User's Strike Reason",
       required: true,
-      choices,
+      autocomplete: true,
     },
     {
       type: ApplicationCommandOptionType.User,
@@ -32,7 +33,7 @@ export default {
       name: 'reason2',
       description: "Second User's Strike Reason",
       required: false,
-      choices,
+      autocomplete: true,
     },
     {
       type: ApplicationCommandOptionType.User,
@@ -45,7 +46,7 @@ export default {
       name: 'reason3',
       description: "Third User's Strike Reason",
       required: false,
-      choices,
+      autocomplete: true,
     },
     {
       type: ApplicationCommandOptionType.User,
@@ -58,7 +59,7 @@ export default {
       name: 'reason4',
       description: "Fourth User's Strike Reason",
       required: false,
-      choices,
+      autocomplete: true,
     },
     {
       type: ApplicationCommandOptionType.User,
@@ -71,19 +72,22 @@ export default {
       name: 'reason5',
       description: "Fifth User's Strike Reason",
       required: false,
-      choices,
+      autocomplete: true,
     },
     // Add more user and reason options as needed
   ],
+  autocomplete: async ({ interaction }) => {
+    await strikeChoicesAutocomplete(interaction);
+  },
   execute: async ({ interaction }) => {
     try {
       Logger.info('Add Strikes command executed');
-      if (interaction.options._hoistedOptions.length % 2 !== 0) {
-        return {
-          message: 'You must select a user and the reason for the strike.',
-          content: undefined,
-        };
-      }
+      // if (interaction.options._hoistedOptions.length % 2 !== 0) {
+      //   return {
+      //     message: 'You must select a user and the reason for the strike.',
+      //     content: undefined,
+      //   };
+      // }
 
       const strikes = await addStrike(interaction);
 
@@ -98,4 +102,4 @@ export default {
       });
     }
   },
-};
+});

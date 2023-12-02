@@ -31,7 +31,6 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
 
     const guildChannel = (await interaction.guild.channels.fetch(channel.id)) as TextChannel;
     const message = await guildChannel.messages.fetch(messageId);
-
     const reactedUsers = await fetchMessageReactions(message);
     const usernames = reactedUsers.flatMap((user) => user.map((u) => u.username));
 
@@ -46,8 +45,6 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     const membersNames = members.map((member) => member.username);
 
     const filteredList = removeDuplicates([...usernames, ...membersNames]);
-
-    console.log('FILTERED LIST', filteredList);
 
     const displayNames = await Promise.all(
       filteredList.map(async (username) => {

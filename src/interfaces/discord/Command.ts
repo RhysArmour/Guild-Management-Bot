@@ -1,4 +1,5 @@
 import {
+  AutocompleteInteraction,
   ChatInputApplicationCommandData,
   ChatInputCommandInteraction,
   CommandInteractionOptionResolver,
@@ -11,16 +12,29 @@ export interface ExtendedInteraction extends ChatInputCommandInteraction {
   member: GuildMember;
 }
 
+export interface ExtendedAutocompleteInteraction extends AutocompleteInteraction {
+  member: GuildMember;
+}
+
 interface ExecuteOptions {
   client: ExtendedClient;
   interaction: ChatInputCommandInteraction;
   args: CommandInteractionOptionResolver;
 }
 
+interface AutoCompleteOptions {
+  client: ExtendedClient;
+  interaction: AutocompleteInteraction;
+  args: CommandInteractionOptionResolver;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExecuteFunction = (options: ExecuteOptions) => any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AutoCompleteFunction = (options: AutoCompleteOptions) => any;
 
 export type CommandType = {
   userPermissions?: PermissionResolvable[];
+  autocomplete?: AutoCompleteFunction;
   execute: ExecuteFunction;
 } & ChatInputApplicationCommandData;

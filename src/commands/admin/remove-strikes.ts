@@ -2,7 +2,7 @@ import { ApplicationCommandOptionType } from 'discord.js';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
 import { removeStrikeFromMember } from '../../methods/remove-strikes';
-import { choices } from '../../utils/commandVariables';
+import { strikeChoicesAutocomplete } from '../../utils/helpers/commandVariables';
 
 export default new Command({
   name: 'removestrikes',
@@ -20,7 +20,7 @@ export default new Command({
       description: 'The 1st strike you want to remove from the member',
       type: ApplicationCommandOptionType.String,
       required: true,
-      choices,
+      autocomplete: true,
     },
     {
       name: 'reason',
@@ -29,6 +29,9 @@ export default new Command({
       required: false,
     },
   ],
+  autocomplete: async ({ interaction }) => {
+    await strikeChoicesAutocomplete(interaction);
+  },
   execute: async ({ interaction }) => {
     try {
       const result = await removeStrikeFromMember(interaction);
