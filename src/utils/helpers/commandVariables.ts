@@ -22,8 +22,8 @@ export const choices = [
 ];
 
 export const autocompleteChoices = [
-  'MISC - Ticket Strike',
-  'MISC - Failed Discord Check',
+  'Ticket Strike',
+  'Failed Discord Check',
   'TB - Phase 1 Offense',
   'TB - Phase 2 Offense',
   'TB - Phase 3 Offense',
@@ -37,6 +37,7 @@ export const autocompleteChoices = [
   'TW - Missed Signup',
   'TW - Missed Defense Phase',
   'TW - Missed Offense Phase',
+  'TW - Disobeying TW Orders',
   'TW - Did not meet minimum rogue actions',
   'RAID - Missed Raid',
 ];
