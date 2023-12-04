@@ -65,8 +65,6 @@ export const addStrike = async (interaction: CommandInteraction) => {
       reply += `- Strike for ${displayName} has been updated. ${displayName} now has ${result.strikes} strikes\n\n`;
     }
 
-    console.log('POST LOOP');
-
     Logger.info(`Strike Message: ${message}`);
     Logger.info(`Reply Message: ${reply}`);
 
