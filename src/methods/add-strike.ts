@@ -24,6 +24,7 @@ export const addStrike = async (interaction: CommandInteraction) => {
       });
       return;
     }
+
     Logger.info(`Database entry found for server: ${serverId}`);
 
     const strike = ':x:';

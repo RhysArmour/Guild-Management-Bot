@@ -1,4 +1,4 @@
-export interface IStrikeValues {
+export interface IStrikeValue {
   strikeReason: string;
   value: number;
 }
