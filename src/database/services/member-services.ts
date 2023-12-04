@@ -4,14 +4,16 @@ import prisma from '../prisma';
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { RoleTableService } from './role-services';
 import { LimitsTableService } from './limits-services';
+import { IMember } from '../../interfaces/database/member-interface';
 
 export class MemberTableServices {
-  static async createMemberWithMember(member: GuildMember) {
+  static async createMemberWithMember(member: GuildMember): Promise<IMember> {
     const serverId = member.guild.id;
     const { displayName: name } = member;
 
     Logger.info(`Creating member with ID: ${member.id} for server: ${member.guild.name}`);
-    return prisma.guildMembersTable.create({
+
+    const result = await prisma.guildMembersTable.create({
       data: {
         uniqueId: `${serverId} - ${member.id}`,
         serverName: member.guild.name,
@@ -36,6 +38,8 @@ export class MemberTableServices {
         updatedDate: new Date().toISOString(),
       },
     });
+
+    return result;
   }
 
   static async addMemberStrikesWithMember(member: GuildMember, strikeValue: number) {

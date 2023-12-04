@@ -2,10 +2,10 @@ import { Logger } from '../../logger';
 import prisma from '../prisma';
 import { CommandInteraction } from 'discord.js';
 import { Prisma } from '@prisma/client';
-import { IStrikeValues } from '../../interfaces/database/strike-values';
+import { IStrikeValue } from '../../interfaces/database/strike-values';
 
 export class StrikeValuesTableService {
-  static async createStrikeValuesByInteraction(interaction: CommandInteraction, data: IStrikeValues) {
+  static async createStrikeValuesByInteraction(interaction: CommandInteraction, data: IStrikeValue) {
     try {
       Logger.info('Starting createStrikeValuesByInteraction method');
       const serverId = interaction.guildId as string;
@@ -41,7 +41,7 @@ export class StrikeValuesTableService {
     }
   }
 
-  static async updateStrikeValuesByInteraction(interaction: CommandInteraction, data: IStrikeValues) {
+  static async updateStrikeValuesByInteraction(interaction: CommandInteraction, data: IStrikeValue) {
     try {
       Logger.info('Starting updateStrikeValuesByInteraction method');
       const uniqueId = `${interaction.guildId} - ${data.strikeReason}`;

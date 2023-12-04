@@ -24,6 +24,7 @@ export const addStrike = async (interaction: CommandInteraction) => {
       });
       return;
     }
+
     Logger.info(`Database entry found for server: ${serverId}`);
 
     const strike = ':x:';
@@ -63,6 +64,8 @@ export const addStrike = async (interaction: CommandInteraction) => {
       } strikes ${strike.repeat(result.strikes)}\n\n`;
       reply += `- Strike for ${displayName} has been updated. ${displayName} now has ${result.strikes} strikes\n\n`;
     }
+
+    console.log('POST LOOP');
 
     Logger.info(`Strike Message: ${message}`);
     Logger.info(`Reply Message: ${reply}`);
