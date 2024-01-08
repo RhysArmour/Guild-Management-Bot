@@ -1,6 +1,9 @@
 # Generated source files
 lib/
 
+# Commands
+test-add-strike.ts
+
 ### Node ###
 node_modules
 npm-debug.log

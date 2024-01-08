@@ -32,6 +32,7 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
 
     if (strikeReason.includes('Ticket Strike')) {
       const ticketStrikes = await StrikeReasonsServices.getTicketStrikesByMemberWithinResetPeriod(member);
+      // TODO: Refactor to compare current date to most recent ticket strike and remove THAT strike
       strikeReason = ticketStrikes[0].reason;
     }
 
@@ -54,7 +55,8 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
 
     const strikeValue = await StrikeValuesTableService.getIndividualStrikeValueByInteraction(interaction, reason);
 
-    await MemberTableServices.updateMemberStrikesByMember(member, strikeValue);
+    // TODO: RENAME updateMemberStrikesByGuildMember to SubtractMemberStrikesByMember and refactor accordingly
+    await MemberTableServices.updateMemberStrikesByGuildMember(member, strikeValue);
     await StrikeReasonsServices.deleteStrikeReasonEntryByMember(member, { uniqueId, reason, date });
     const newRecord = await MemberTableServices.getAllStrikeReasonsByMember(member);
 

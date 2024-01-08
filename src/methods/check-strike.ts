@@ -8,7 +8,7 @@ import { StrikeValuesTableService } from '../database/services/strike-values-ser
 
 export const checkStrikes = async (interaction: CommandInteraction) => {
   try {
-    Logger.info('Beginning check Strikes');
+    Logger.info('Beginning check Strikes.');
     const { month } = currentDate();
     const serverId = interaction.guildId!;
     const { strikeChannelId, strikeChannelName } = await ChannelTableService.getChannelsByServerId(serverId);

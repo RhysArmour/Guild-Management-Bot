@@ -75,8 +75,22 @@ export class MemberTableServices {
     });
   }
 
-  static async updateMemberStrikesByMember(member: GuildMember, strikeValue: number) {
+  static async updateMemberStrikesByGuildMember(member: GuildMember, strikeValue: number) {
     Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
+    const existingRecord = await this.getMemberWithMember(member);
+    return prisma.guildMembersTable.update({
+      where: { uniqueId: `${member.guild.id} - ${member.id}` },
+      data: {
+        strikes: existingRecord.strikes - strikeValue,
+        lifetimeStrikes: existingRecord.lifetimeStrikes - strikeValue,
+      },
+    });
+  }
+
+  // TODO: Work out and implement type
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static async updateMemberStrikesByPrismaMember(member: any, strikeValue: number) {
+    Logger.info(`Updating member with ID: ${member.memberId}`);
     const existingRecord = await this.getMemberWithMember(member);
     return prisma.guildMembersTable.update({
       where: { uniqueId: `${member.guild.id} - ${member.id}` },
@@ -196,6 +210,16 @@ export class MemberTableServices {
       select: {
         name: true,
         username: true,
+      },
+    });
+  }
+
+  static async getAllMembersDataByServerId(serverId: string) {
+    Logger.info(`Fetching all members in server: ID: ${serverId}`);
+    return prisma.guildMembersTable.findMany({
+      where: { serverId },
+      include: {
+        strikeReasons: true,
       },
     });
   }
