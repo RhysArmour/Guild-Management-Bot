@@ -10,7 +10,7 @@ export class StrikeReasonsServices {
     strikeReasons: MemberStrikeReasons[],
     serverId: string,
   ): Promise<MemberStrikeReasons[]> {
-    Logger.info('Starting filterStrikeByResetPeriod method');
+    Logger.info('Starting filterStrikeByResetPeriod method.');
     let { strikeResetPeriod, lastStrikeReset } = await ServerTableService.getServerTableByServerId(serverId);
     const newDate = new Date();
     if (!lastStrikeReset) {
@@ -20,10 +20,9 @@ export class StrikeReasonsServices {
       strikeResetPeriod = 1;
     }
     const result: MemberStrikeReasons[] = [];
-    newDate.setMonth(lastStrikeReset.getMonth() + strikeResetPeriod);
 
     strikeReasons.forEach((entry) => {
-      if (entry.date.getTime() - lastStrikeReset.getTime() < newDate.getTime() - lastStrikeReset.getTime()) {
+      if (entry.date.getMonth() === newDate.getMonth()) {
         result.push(entry);
       }
     });
