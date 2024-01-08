@@ -3,32 +3,31 @@ import { Command } from '../../classes/Commands';
 import { ApplicationCommandOptionType, Role } from 'discord.js';
 
 export default new Command({
-  name: 'removerole',
-  description: 'Removes the chosen role from all members',
+  name: 'whohasrole',
+  description: 'Returns a list of members with the chosen role',
   defaultMemberPermissions: 'KickMembers',
   options: [
     {
       type: ApplicationCommandOptionType.Role,
       name: 'role',
-      description: 'The role you would like to remove from all members',
+      description: 'The role you would like to check',
       required: true,
     },
   ],
 
   execute: async ({ interaction }) => {
     try {
-      Logger.info('Beginning Removing Roles');
+      Logger.info('Beginning check roles');
       await interaction.guild.members.fetch();
       const role = interaction.options.getRole('role') as Role;
       const membersList = role.members.map((member) => member);
 
-      let reply = `The ${role.name} role has been removed from the following:`;
+      let reply = `The following has the ${role.name} role:`;
       membersList.forEach((member) => {
-        member.roles.remove(role.id);
         reply += `\n- ${member.displayName}`;
       });
 
-      Logger.info('Removing Roles Completed');
+      Logger.info('Check Roles Completed');
       return {
         content: undefined,
         message: reply,
