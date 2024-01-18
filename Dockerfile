@@ -1,5 +1,5 @@
     FROM node:latest
-    WORKDIR /guild-management-bot
+    WORKDIR /Guild-Management-Bot
     COPY package.json .
     RUN npm install\
         && npm install typescript -g
@@ -7,4 +7,4 @@
     ENV NODE_ENV=production
     RUN npx prisma generate
     RUN npm run build
-    CMD ["node", "./lib/index.js"]
+    CMD ["node", "./lib/src/index.js"]
