@@ -1,38 +1,32 @@
-import { ChatInputCommandInteraction, TextChannel } from 'discord.js';
+import { ChatInputCommandInteraction, Message, Role, TextChannel } from 'discord.js';
 import { Logger } from '../logger';
-import { MemberTableServices } from '../database/services/member-services';
 
-const fetchMessageReactions = async (message) => {
+const fetchMessageReactions = async (message: Message) => {
   Logger.info('Fetching message reactions');
   const reactions = message.reactions.cache;
-  const reactedUsers = [];
+  const fetchPromises = [];
 
   for (const reaction of reactions.values()) {
-    const users = await reaction.users.fetch();
-    reactedUsers.push(users);
+    fetchPromises.push(reaction.users.fetch());
   }
 
-  return reactedUsers;
+  return Promise.all(fetchPromises);
 };
-
-function removeDuplicates(arrayOfStrings) {
-  Logger.info('Removing duplicates');
-  return arrayOfStrings.filter(
-    (element, index) =>
-      !arrayOfStrings.some((otherElement, otherIndex) => index !== otherIndex && element === otherElement),
-  );
-}
 
 export const getReactions = async (interaction: ChatInputCommandInteraction) => {
   try {
     Logger.info('Starting getReactions Method');
+    await interaction.guild.members.fetch();
     const messageId = interaction.options.getString('messageid');
-    const channel = interaction.options.getChannel('channel');
+    const channel = interaction.options.getChannel('channel') as TextChannel;
+    const role = interaction.options.getRole('role') as Role;
 
     const guildChannel = (await interaction.guild.channels.fetch(channel.id)) as TextChannel;
     const message = await guildChannel.messages.fetch(messageId);
+
     const reactedUsers = await fetchMessageReactions(message);
-    const usernames = reactedUsers.flatMap((user) => user.map((u) => u.username));
+
+    const usernames: string[] = reactedUsers.flatMap((user) => user.map((u) => u.username));
 
     if (usernames.length === 0) {
       return {
@@ -41,19 +35,13 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
       };
     }
 
-    const members = await MemberTableServices.getAllMembersByServerId(interaction.guildId);
-    const membersNames = members.map((member) => member.username);
+    const filteredReactions = Array.from(new Set(usernames));
 
-    const filteredList = removeDuplicates([...usernames, ...membersNames]);
+    const allMembers = (await message.guild.roles.fetch(role.id)).members.map((member) => member.user.username);
 
-    const displayNames = await Promise.all(
-      filteredList.map(async (username) => {
-        const nameRecord = await MemberTableServices.getAllMembersDisplayNamesByServerId(interaction.guildId, username);
-        return nameRecord.name;
-      }),
-    );
+    const filteredMembers = allMembers.filter((member) => !filteredReactions.includes(member));
 
-    const formattedResponse = displayNames.map((name) => `- ${name}`).join('\n');
+    const formattedResponse = filteredMembers.map((name) => `- ${name}`).join('\n');
 
     Logger.info('Finished getReactions Method');
     return {

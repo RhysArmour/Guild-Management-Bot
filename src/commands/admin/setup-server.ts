@@ -61,7 +61,10 @@ export default new Command({
       const serverData = extractServerData(interaction);
 
       if (!serverData.triggerPhrase && !serverData.strikeResetPeriod) {
-        return 'Must select at least 1 option to set up.';
+        return {
+          content: undefined,
+          message: 'Must select at least 1 option to set up.',
+        };
       }
 
       Logger.info('Data Successfully Retrieved');
