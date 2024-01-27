@@ -1,13 +1,14 @@
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, GuildMember } from 'discord.js';
 import { RoleTableService } from '../database/services/role-services';
 import { MemberTableServices } from '../database/services/member-services';
 import { Logger } from '../logger';
 
 const processedMembers = [];
 
-const processMember = async (member, guildRoleId) => {
+const processMember = async (member: GuildMember, guildRoleId: string) => {
   try {
     const existingMember = await MemberTableServices.getMemberWithMember(member);
+
     processedMembers.push(member.displayName);
 
     if (!existingMember && member.roles.cache.has(guildRoleId)) {

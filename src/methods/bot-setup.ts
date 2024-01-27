@@ -89,7 +89,7 @@ export class GuildSetup {
 
     try {
       Logger.info('Setting up guild server');
-      const existingRecord = ServerTableService.getServerTableByServerId(interaction.guildId);
+      const existingRecord = await ServerTableService.getServerTableByServerId(interaction.guildId);
 
       if (existingRecord) {
         Logger.info('Record exists. Updating with new values.');

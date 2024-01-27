@@ -29,6 +29,7 @@ export class ServerTableService {
   static async createServerTableEntryByInteractionWithData(interaction: CommandInteraction, serverData: IGuildServer) {
     try {
       const { triggerPhrase, strikeResetPeriod } = serverData;
+      const strikeResetPeriodValue = strikeResetPeriod ? strikeResetPeriod : 1;
       const serverId = interaction.guildId;
       const serverName = interaction.guild.name;
 
@@ -37,7 +38,7 @@ export class ServerTableService {
           createdDate: new Date().toISOString(),
           updatedDate: new Date().toISOString(),
           triggerPhrase,
-          strikeResetPeriod,
+          strikeResetPeriod: strikeResetPeriodValue,
           serverId,
           serverName,
         },
@@ -111,14 +112,12 @@ export class ServerTableService {
 
       if (serverRecord) {
         Logger.info(`Retrieved server entry for server: ${serverRecord.serverName}`);
-      } else {
-        Logger.warn(`Server entry not found for server with ID: ${serverId}`);
       }
 
       return serverRecord;
     } catch (error) {
       Logger.error(`Error getting server entry: ${error}`);
-      throw new Error('Failed to get server entry');
+      return;
     }
   }
 

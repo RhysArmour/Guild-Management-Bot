@@ -9,14 +9,20 @@ export default new Command({
   options: [
     {
       name: `channel`,
-      description: 'The user that you would like to see the strikes for.',
+      description: 'The channel that the message is in',
       type: ApplicationCommandOptionType.Channel,
       required: true,
     },
     {
       name: `messageid`,
-      description: 'The user that you would like to see the strikes for.',
+      description: 'The message Id of the message you wish to see the reactions for',
       type: ApplicationCommandOptionType.String,
+      required: true,
+    },
+    {
+      name: 'role',
+      description: 'role of the members you want to check the reactions for',
+      type: ApplicationCommandOptionType.Role,
       required: true,
     },
   ],
