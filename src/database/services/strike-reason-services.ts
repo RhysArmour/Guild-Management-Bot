@@ -1,5 +1,5 @@
 import { Logger } from '../../logger';
-import prisma from '../prisma';
+import prisma from '../../classes/PrismaClient';
 import { GuildMember } from 'discord.js';
 import { IStrikeReasons } from '../../interfaces/database/strike-reason';
 import { GuildStrikeValues, MemberStrikeReasons, Prisma } from '@prisma/client';

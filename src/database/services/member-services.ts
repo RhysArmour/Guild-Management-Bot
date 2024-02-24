@@ -1,7 +1,7 @@
 import { Logger } from '../../logger';
-import prisma from '../prisma';
+import prisma from '../../classes/PrismaClient';
 
-import { CommandInteraction, GuildMember } from 'discord.js';
+import { CommandInteraction, GuildMember, Role } from 'discord.js';
 import { RoleTableService } from './role-services';
 import { LimitsTableService } from './limits-services';
 import { IMember } from '../../interfaces/database/member-interface';
@@ -49,8 +49,8 @@ export class MemberTableServices {
     const record = await prisma.guildMembersTable.update({
       where: { uniqueId: `${member.guild.id} - ${member.id}` },
       data: {
-        strikes: existingRecord.strikes + strikeValue,
-        lifetimeStrikes: existingRecord.lifetimeStrikes + strikeValue,
+        strikes: existingRecord!.strikes + strikeValue,
+        lifetimeStrikes: existingRecord!.lifetimeStrikes + strikeValue,
       },
     });
 
@@ -59,7 +59,7 @@ export class MemberTableServices {
     if (record.strikes >= strikeLimit) {
       Logger.info(`${member.displayName} reached strike limit. Adding strike limit role.`);
       const { strikeLimitRoleId } = await RoleTableService.getRolesByServerId(member.guild.id);
-      const role = await member.guild.roles.fetch(`${strikeLimitRoleId}`);
+      const role = (await member.guild.roles.fetch(`${strikeLimitRoleId}`)) as Role;
       member.roles.add(role);
     }
     return record;
@@ -115,8 +115,8 @@ export class MemberTableServices {
     Logger.info(`Updating ${oldMember.displayName} Absence status.`);
     const serverId = oldMember.guild.id;
     const { absenceRoleId } = await RoleTableService.getRolesByServerId(serverId);
-    let currentAbsenceStartDate = null;
-    let totalAbsenceDuration = null;
+    let currentAbsenceStartDate: null | string = null;
+    let totalAbsenceDuration: null | number = null;
     const currentRecord = await MemberTableServices.getMemberWithMember(oldMember);
     const date = new Date();
 
@@ -192,9 +192,9 @@ export class MemberTableServices {
   }
 
   static async getAllGuildStrikesByInteraction(interaction: CommandInteraction) {
-    Logger.info(`Fetching all members in server: ID: ${interaction.guild.id} for server: ${interaction.guild.name}`);
+    Logger.info(`Fetching all members in server: ID: ${interaction.guild?.id} for server: ${interaction.guild?.name}`);
     return prisma.guildMembersTable.findMany({
-      where: { serverId: interaction.guild.id },
+      where: { serverId: interaction.guild?.id },
       select: {
         name: true,
         strikes: true,

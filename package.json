@@ -6,6 +6,8 @@
   "scripts": {
     "start": "npm run build && npm run server --print-label",
     "deploy:commands": "tsc && node lib/deploy-commands.js",
+    "seedDb": "ts-node '/home/rhysarmour/Projects/Guild-Management-Bot/__tests__/seed-database'",
+    "deleteDb": "ts-node '/home/rhysarmour/Projects/Guild-Management-Bot/__tests__/teardown-database'",
     "build": "tsc -p ./tsconfig.json",
     "server": "ts-node '/home/rhysarmour/Projects/Guild-Management-Bot/lib/src/index'",
     "lint:fix": "eslint ./src --fix --ext .ts",

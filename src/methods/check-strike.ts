@@ -1,7 +1,7 @@
 import { CommandInteraction, GuildMember } from 'discord.js';
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
-import currentDate from '../utils/helpers/get-date';
+import { currentDate } from '../utils/helpers/get-date';
 import { ChannelTableService } from '../database/services/channel-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
 import { StrikeValuesTableService } from '../database/services/strike-values-services';
@@ -9,7 +9,7 @@ import { StrikeValuesTableService } from '../database/services/strike-values-ser
 export const checkStrikes = async (interaction: CommandInteraction) => {
   try {
     Logger.info('Beginning check Strikes.');
-    const { month } = currentDate();
+    const { currentMonth } = currentDate();
     const serverId = interaction.guildId!;
     const { strikeChannelId, strikeChannelName } = await ChannelTableService.getChannelsByServerId(serverId);
     if (!strikeChannelId || !strikeChannelName) {
@@ -36,7 +36,7 @@ export const checkStrikes = async (interaction: CommandInteraction) => {
       const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(serverId);
 
       const reasonList = await StrikeReasonsServices.getReasonsList(filteredReasons, guildStrikeValuesRecord);
-      const strikesForMonthMessage = `- strikes for ${month}:\n ${reasonList}\n`;
+      const strikesForMonthMessage = `- strikes for ${currentMonth}:\n ${reasonList}\n`;
 
       if (reasonList !== '') {
         message += `${i + 1}. ${displayName} has ${strikes} strikes ${strike.repeat(
@@ -45,7 +45,7 @@ export const checkStrikes = async (interaction: CommandInteraction) => {
       } else {
         message += `${i + 1}. ${displayName} has ${strikes} strikes ${strike.repeat(
           strikes,
-        )} and ${lifetimeStrikes} Lifetime Strikes\n - ${displayName} has had no strikes in ${month}.\n`;
+        )} and ${lifetimeStrikes} Lifetime Strikes\n - ${displayName} has had no strikes in ${currentMonth}.\n`;
       }
     }
 
