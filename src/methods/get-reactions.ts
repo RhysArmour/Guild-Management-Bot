@@ -4,7 +4,7 @@ import { Logger } from '../logger';
 const fetchMessageReactions = async (interaction: ChatInputCommandInteraction) => {
   try {
     Logger.info('Fetching message reactions');
-    let reactedUsers: Collection<string, User>;
+    const reactedUsers: Collection<string, User>[] = [];
     const messageId = interaction.options.getString('messageid');
     const channel = interaction.options.getChannel('channel') as TextChannel;
     const guildChannel = (await interaction.guild.channels.fetch(channel.id)) as TextChannel;
@@ -14,7 +14,7 @@ const fetchMessageReactions = async (interaction: ChatInputCommandInteraction) =
 
     for await (const reaction of reactions) {
       const user = await reaction[1].users.fetch();
-      reactedUsers = user;
+      reactedUsers.push(user);
     }
 
     return reactedUsers;
@@ -33,7 +33,7 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
 
     const users = await fetchMessageReactions(interaction);
 
-    const usernames: string[] = users.map((user) => user.username);
+    const usernames: string[] = users.flatMap((user) => user.map((user) => user.username));
 
     if (usernames.length === 0) {
       return {
@@ -53,7 +53,7 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     Logger.info('Finished getReactions Method');
     return {
       content: undefined,
-      message: `The following have not reacted:\n${formattedResponse}`,
+      message: `The following ${filteredMembers.length} have not reacted:\n${formattedResponse}`,
     };
   } catch (error) {
     Logger.error('Error in getReactions:', error);
