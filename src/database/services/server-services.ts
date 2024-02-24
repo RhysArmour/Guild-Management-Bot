@@ -1,6 +1,6 @@
 import { IGuildServer } from '../../interfaces/methods/bot-setup';
 import { Logger } from '../../logger';
-import prisma from '../prisma';
+import prisma from '../../classes/PrismaClient';
 import { CommandInteraction } from 'discord.js';
 
 export class ServerTableService {

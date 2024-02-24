@@ -1,32 +1,39 @@
-import { ChatInputCommandInteraction, Message, Role, TextChannel } from 'discord.js';
+import { ChatInputCommandInteraction, Collection, Message, Role, TextChannel, User } from 'discord.js';
 import { Logger } from '../logger';
 
-const fetchMessageReactions = async (message: Message) => {
-  Logger.info('Fetching message reactions');
-  const reactions = message.reactions.cache;
-  const fetchPromises = [];
+const fetchMessageReactions = async (interaction: ChatInputCommandInteraction) => {
+  try {
+    Logger.info('Fetching message reactions');
+    let reactedUsers: Collection<string, User>;
+    const messageId = interaction.options.getString('messageid');
+    const channel = interaction.options.getChannel('channel') as TextChannel;
+    const guildChannel = (await interaction.guild.channels.fetch(channel.id)) as TextChannel;
+    const message = (await guildChannel.messages.fetch(messageId)) as Message;
 
-  for (const reaction of reactions.values()) {
-    fetchPromises.push(reaction.users.fetch());
+    const reactions = message.reactions.cache;
+
+    for await (const reaction of reactions) {
+      const user = await reaction[1].users.fetch();
+      reactedUsers = user;
+    }
+
+    return reactedUsers;
+  } catch (error) {
+    Logger.error(error);
   }
-
-  return Promise.all(fetchPromises);
 };
 
 export const getReactions = async (interaction: ChatInputCommandInteraction) => {
   try {
     Logger.info('Starting getReactions Method');
+
     await interaction.guild.members.fetch();
-    const messageId = interaction.options.getString('messageid');
-    const channel = interaction.options.getChannel('channel') as TextChannel;
+
     const role = interaction.options.getRole('role') as Role;
 
-    const guildChannel = (await interaction.guild.channels.fetch(channel.id)) as TextChannel;
-    const message = await guildChannel.messages.fetch(messageId);
+    const users = await fetchMessageReactions(interaction);
 
-    const reactedUsers = await fetchMessageReactions(message);
-
-    const usernames: string[] = reactedUsers.flatMap((user) => user.map((u) => u.username));
+    const usernames: string[] = users.map((user) => user.username);
 
     if (usernames.length === 0) {
       return {
@@ -37,7 +44,7 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
 
     const filteredReactions = Array.from(new Set(usernames));
 
-    const allMembers = (await message.guild.roles.fetch(role.id)).members.map((member) => member.user.username);
+    const allMembers = role.members.map((member) => member.user.username);
 
     const filteredMembers = allMembers.filter((member) => !filteredReactions.includes(member));
 

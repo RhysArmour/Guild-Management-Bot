@@ -1,4 +1,4 @@
-import prisma from '../prisma';
+import prisma from '../../classes/PrismaClient';
 import { CommandInteraction } from 'discord.js';
 import { Logger } from '../../logger';
 import { IGuildChannels } from '../../interfaces/methods/bot-setup';

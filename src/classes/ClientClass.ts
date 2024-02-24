@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../classes/PrismaClient';
 import { ApplicationCommandDataResolvable, Client, ClientEvents, Collection, GatewayIntentBits } from 'discord.js';
 import { CommandType } from '../interfaces/discord/Command';
 import config from '../config';
@@ -6,8 +6,6 @@ import { glob } from 'glob';
 import { Logger } from '../logger';
 import { RegisterCommandsOptions } from '../interfaces/discord/RegisterCommands';
 import { Event } from './Event';
-
-const prisma = new PrismaClient();
 
 export default class ExtendedClient extends Client {
   commands: Collection<string, CommandType> = new Collection();
