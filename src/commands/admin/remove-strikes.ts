@@ -32,22 +32,19 @@ export default new Command({
   autocomplete: async ({ interaction }) => {
     await strikeChoicesAutocomplete(interaction);
   },
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server) => {
     try {
-      const result = await removeStrikeFromMember(interaction);
-      if (result.content !== undefined) {
-        Logger.info(`Removed strikes for user ${interaction.user.username}`);
-        return {
-          content: result,
-          message: 'Strikes successfully removed.',
-        };
-      }
+      const result = await removeStrikeFromMember(interaction, server);
+      return {
+        title: 'Remove Strikes',
+        fields: [{ name: 'Message', value: result }],
+      };
     } catch (error) {
       Logger.error(`Error while removing strikes: ${error}`);
-      await interaction.reply({
-        content: 'An error occurred while removing strikes.',
-        ephemeral: true,
-      });
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occurred whilst removing strikes.' }],
+      };
     }
   },
 });

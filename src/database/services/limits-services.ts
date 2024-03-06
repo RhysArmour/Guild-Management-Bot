@@ -48,18 +48,6 @@ export class LimitsTableService {
     }
   }
 
-  static async deleteGuildLimitsEntryByServerId(serverId: string) {
-    try {
-      Logger.info(`Deleting guild limits for server: ${serverId}`);
-      return await prisma.guildLimitsTable.delete({
-        where: { serverId },
-      });
-    } catch (error) {
-      Logger.error(`Error deleting guild limits: ${error}`);
-      throw new Error('Failed to delete guild limits');
-    }
-  }
-
   static async getLimitsByServerId(serverId: string) {
     try {
       Logger.info(`Getting guild limits for server: ${serverId}`);

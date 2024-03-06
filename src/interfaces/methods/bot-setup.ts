@@ -18,6 +18,6 @@ export interface IGuildLimits {
 }
 
 export interface IGuildServer {
-  triggerPhrase?: string;
-  strikeResetPeriod?: number;
+  allyCode: string;
+  ticketStrikesEnabled: boolean;
 }

@@ -8,7 +8,7 @@ const fetchMessageReactions = async (interaction: ChatInputCommandInteraction) =
     const messageId = interaction.options.getString('messageid');
     const channel = interaction.options.getChannel('channel') as TextChannel;
     const guildChannel = (await interaction.guild.channels.fetch(channel.id)) as TextChannel;
-    const message = (await guildChannel.messages.fetch(messageId)) as Message;
+    const message = (await guildChannel.messages.fetch({message: messageId, force: true})) as Message;
 
     const reactions = message.reactions.cache;
 
@@ -36,10 +36,7 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     const usernames: string[] = users.flatMap((user) => user.map((user) => user.username));
 
     if (usernames.length === 0) {
-      return {
-        content: undefined,
-        message: 'There are currently no reactions on this message',
-      };
+      return 'There are currently no reactions on this message';
     }
 
     const filteredReactions = Array.from(new Set(usernames));
@@ -51,16 +48,10 @@ export const getReactions = async (interaction: ChatInputCommandInteraction) => 
     const formattedResponse = filteredMembers.map((name) => `- ${name}`).join('\n');
 
     Logger.info('Finished getReactions Method');
-    return {
-      content: undefined,
-      message: `The following ${filteredMembers.length} have not reacted:\n${formattedResponse}`,
-    };
+    return `The following ${filteredMembers.length} have not reacted:\n${formattedResponse}`;
   } catch (error) {
     Logger.error('Error in getReactions:', error);
-    return {
-      content: undefined,
-      message: 'An error occurred while processing reactions.',
-    };
+    return 'An error occurred while processing reactions.';
   }
 };
 

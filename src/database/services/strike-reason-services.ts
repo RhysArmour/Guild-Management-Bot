@@ -1,17 +1,18 @@
 import { Logger } from '../../logger';
 import prisma from '../../classes/PrismaClient';
 import { GuildMember } from 'discord.js';
-import { IStrikeReasons } from '../../interfaces/database/strike-reason';
 import { GuildStrikeValues, MemberStrikeReasons, Prisma } from '@prisma/client';
+import { getLastMonthFullDate } from '../../utils/helpers/get-date';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 import { ServerTableService } from './server-services';
 
 export class StrikeReasonsServices {
   static async filterStrikeByResetPeriod(
     strikeReasons: MemberStrikeReasons[],
-    serverId: string,
+    server: ServerWithRelations,
   ): Promise<MemberStrikeReasons[]> {
     Logger.info('Starting filterStrikeByResetPeriod method.');
-    let { strikeResetPeriod, lastStrikeReset } = await ServerTableService.getServerTableByServerId(serverId);
+    let { strikeResetPeriod, lastStrikeReset } = server;
     const newDate = new Date();
     if (!lastStrikeReset) {
       lastStrikeReset = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
@@ -101,90 +102,38 @@ export class StrikeReasonsServices {
     }
   }
 
-  static async deleteManyStrikeReasonEntriesByServerId(serverId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static async strikeReasonsReset(serverId: string, startOfPreviousMonthDate: any, endOfPreviousMonthDate: any) {
     try {
       Logger.info('Starting deleteManyStrikeReasonEntriesByServerId method');
-      const date = new Date();
+      const lastMonth = getLastMonthFullDate();
 
-      const deletedReason = await prisma.memberStrikeReasons.deleteMany({
+      await prisma.memberStrikeReasons.deleteMany({
         where: {
           serverId,
           date: {
-            gte: new Date(date.getFullYear(), date.getMonth(), 1),
-            lte: new Date(date.getFullYear(), date.getMonth() + 1, 0),
+            lte: endOfPreviousMonthDate,
+            gte: startOfPreviousMonthDate,
           },
         },
       });
 
-      Logger.info(`Deleted all strike reason entries for server Id: ${serverId} for ${date.getMonth()}`);
-      return deletedReason;
+      Logger.info(
+        `Deleted all strike reason entries for server Id: ${serverId} for ${lastMonth.toLocaleString('default', {
+          month: 'long',
+        })}`,
+      );
     } catch (error) {
       Logger.error(`Error deleting all strike reason entries: ${error}`);
       throw Error('Failed to delete all strike reason entries');
     }
   }
 
-  static async updateStrikeReasonEntryByMember(member: GuildMember, data: IStrikeReasons) {
-    try {
-      Logger.info('Starting updateStrikeReasonEntryByMember method');
-      const serverId = member.guild.id;
-      const { id, date, reason } = data;
-      const unique_reason = {
-        uniqueId: `${serverId} - ${id}`,
-        date,
-        reason,
-      };
-
-      const updatedReason = await prisma.memberStrikeReasons.update({
-        where: { unique_reason },
-        data: {
-          uniqueId: unique_reason.uniqueId,
-          date,
-          reason,
-        },
-      });
-
-      Logger.info(`Updated strike reason entry for member ${id} on server ${member.guild.name}`);
-      return updatedReason;
-    } catch (error) {
-      Logger.error(`Error updating strike reason entry: ${error}`);
-      throw new Error('Failed to update strike reason entry');
-    }
-  }
-
-  static async getStrikeReasonByMember(member: GuildMember, data: IStrikeReasons) {
-    try {
-      Logger.info('Starting getStrikeReasonByMember method');
-      const serverId = member.guild.id;
-      const { id, date, reason } = data;
-      const unique_reason = {
-        uniqueId: `${serverId} - ${id}`,
-        date,
-        reason,
-      };
-
-      const reasonEntry = await prisma.memberStrikeReasons.findUnique({
-        where: { unique_reason },
-      });
-
-      if (reasonEntry) {
-        Logger.info(`Retrieved strike reason entry for member ${id} on server ${member.guild.name}`);
-      } else {
-        Logger.warn(`Strike reason entry not found for member ${id} on server ${member.guild.name}`);
-      }
-
-      return reasonEntry;
-    } catch (error) {
-      Logger.error(`Error getting strike reason entry: ${error}`);
-      throw new Error('Failed to get strike reason entry');
-    }
-  }
-
   static async getManyStrikeReasonsByMemberWithinResetPeriod(member: GuildMember, reason: string) {
     try {
       Logger.info('Starting getManyStrikeReasonsByMemberWithinResetPeriod method');
-      const serverId = member.guild.id;
-      const uniqueId = `${serverId} - ${member.id}`;
+      const server = await ServerTableService.getServerTableByServerId(member.guild.id);
+      const uniqueId = `${server.serverId} - ${member.id}`;
 
       const reasonEntries = await prisma.memberStrikeReasons.findMany({
         where: { uniqueId, reason },
@@ -195,7 +144,7 @@ export class StrikeReasonsServices {
         Logger.warn(`Strike reason entries not found for member ${member.id} on server ${member.guild.name}`);
       }
 
-      const result = this.filterStrikeByResetPeriod(reasonEntries, serverId);
+      const result = this.filterStrikeByResetPeriod(reasonEntries, server);
 
       return result;
     } catch (error) {
@@ -207,8 +156,8 @@ export class StrikeReasonsServices {
   static async getTicketStrikesByMemberWithinResetPeriod(member: GuildMember) {
     try {
       Logger.info('Starting getTicketStrikesByMemberWithinResetPeriod method');
-      const serverId = member.guild.id;
-      const uniqueId = `${serverId} - ${member.id}`;
+      const server = await ServerTableService.getServerTableByServerId(member.guild.id);
+      const uniqueId = `${server.serverId} - ${member.id}`;
 
       const reasonEntries = await prisma.memberStrikeReasons.findMany({
         where: {
@@ -224,7 +173,7 @@ export class StrikeReasonsServices {
         Logger.warn(`Strike reason entries not found for member ${member.id} on server ${member.guild.name}`);
       }
 
-      const result = this.filterStrikeByResetPeriod(reasonEntries, serverId);
+      const result = this.filterStrikeByResetPeriod(reasonEntries, server);
 
       return result;
     } catch (error) {

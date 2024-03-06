@@ -2,16 +2,16 @@ import { CommandInteraction, GuildMember } from 'discord.js';
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { currentDate } from '../utils/helpers/get-date';
-import { ChannelTableService } from '../database/services/channel-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
 import { StrikeValuesTableService } from '../database/services/strike-values-services';
+import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
-export const checkStrikes = async (interaction: CommandInteraction) => {
+export const checkStrikes = async (interaction: CommandInteraction, server: ServerWithRelations) => {
   try {
     Logger.info('Beginning check Strikes.');
-    const { currentMonth } = currentDate();
+    const { currentMonth } = currentDate('long');
     const serverId = interaction.guildId!;
-    const { strikeChannelId, strikeChannelName } = await ChannelTableService.getChannelsByServerId(serverId);
+    const { strikeChannelId, strikeChannelName } = server.channels;
     if (!strikeChannelId || !strikeChannelName) {
       Logger.error(`Guild Data is missing ${strikeChannelId} or ${strikeChannelName}`);
       throw Error('Guild setup is incomplete.');
@@ -32,7 +32,7 @@ export const checkStrikes = async (interaction: CommandInteraction) => {
 
       const { strikes, lifetimeStrikes, strikeReasons } = await MemberTableServices.getAllStrikeReasonsByMember(member);
 
-      const filteredReasons = await StrikeReasonsServices.filterStrikeByResetPeriod(strikeReasons, serverId);
+      const filteredReasons = await StrikeReasonsServices.filterStrikeByResetPeriod(strikeReasons, server);
       const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(serverId);
 
       const reasonList = await StrikeReasonsServices.getReasonsList(filteredReasons, guildStrikeValuesRecord);

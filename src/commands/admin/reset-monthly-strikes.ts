@@ -7,21 +7,23 @@ export default new Command({
   description: '(Admin)Remove strikes from a given month',
   defaultMemberPermissions: 'KickMembers',
 
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server) => {
     try {
-      Logger.info('Resetting monthly strikes.');
-      const result = await resetMonthlyStrikes(interaction);
+      Logger.info(`Resetting monthly strikes for server: ${server.serverId}`);
+
+      await resetMonthlyStrikes(interaction);
       Logger.info('Monthly strikes reset');
       return {
-        content: result,
-        message: 'Successfully removed all strikes from last month.',
+        title: 'Reset Monthly Strikes',
+        fields: [{ name: 'Message', value: 'Successfully removed all strikes from last month.' }],
       };
     } catch (error) {
       Logger.error(error);
-      await interaction.reply({
-        content: 'Something went wrong.',
-        ephemeral: true,
-      });
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occurred whilst removing strikes.' }],
+      };
     }
   },
 });
+

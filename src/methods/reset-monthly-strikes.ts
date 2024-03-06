@@ -3,35 +3,41 @@ import { MemberTableServices } from '../database/services/member-services';
 import prisma from '../classes/PrismaClient';
 import { getLastMonthFullDate } from '../utils/helpers/get-date';
 import { Logger } from '../logger';
+import { StrikeReasonsServices } from '../database/services/strike-reason-services';
+import { ServerTableService } from '../database/services/server-services';
 
-export const resetMonthlyStrikes = async (interaction: CommandInteraction) => {
+export const resetMonthlyStrikes = async (interaction: CommandInteraction | string) => {
   Logger.info('Starting resetMonthlyStrikes');
-  try {
-    const guildId = interaction.guildId as string;
 
-    const serverMembers = await MemberTableServices.getAllMembersDataByServerId(guildId);
+  try {
+    let guildId: string;
+    if (interaction instanceof CommandInteraction) {
+      guildId = interaction.guildId as string;
+    } else {
+      guildId = interaction;
+    }
 
     const lastMonth = getLastMonthFullDate();
 
     // Create a new Date object for the first day of the previous month
     const startOfPreviousMonthDate = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
     const endOfPreviousMonthDate = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
-
-    Logger.info('Looping through serverMembers');
-    for (const member of serverMembers) {
-      const previousMonthsStrikes = await prisma.memberStrikeReasons.findMany({
-        where: {
-          serverId: guildId,
-          uniqueId: `${guildId} - ${member.memberId}`,
-          date: {
-            lte: endOfPreviousMonthDate,
-            gte: startOfPreviousMonthDate,
-          },
+    const previousMonthsStrikes = await prisma.memberStrikeReasons.findMany({
+      where: {
+        serverId: guildId,
+        date: {
+          lte: endOfPreviousMonthDate,
+          gte: startOfPreviousMonthDate,
         },
-      });
+      },
+      include: {
+        member: true,
+      },
+    });
 
-      if (previousMonthsStrikes.length > 0) {
-        Logger.info(`Strikes found for previous month for Member: ${member.name}`);
+    if (previousMonthsStrikes.length > 0) {
+      for (const strike of previousMonthsStrikes) {
+        Logger.info(`Strikes found for previous month for Member: ${strike.member.name}`);
         let totalStrikesToRemove = 0;
 
         Logger.info('Looping through previousMonthStrike values');
@@ -48,26 +54,15 @@ export const resetMonthlyStrikes = async (interaction: CommandInteraction) => {
         }
 
         Logger.info(`Removing ${totalStrikesToRemove} strikes`);
-        const newStrikes = member.strikes - totalStrikesToRemove;
+        const newStrikes = strike.member.strikes - totalStrikesToRemove;
 
-        await prisma.guildMembersTable.update({
-          where: { uniqueId: member.uniqueId },
-          data: {
-            strikes: newStrikes,
-          },
-        });
+        await MemberTableServices.strikeResetUpdate(strike.member.uniqueId, newStrikes);
       }
     }
 
-    await prisma.memberStrikeReasons.deleteMany({
-      where: {
-        serverId: guildId,
-        date: {
-          lte: endOfPreviousMonthDate,
-          gte: startOfPreviousMonthDate,
-        },
-      },
-    });
+    await StrikeReasonsServices.strikeReasonsReset(guildId, startOfPreviousMonthDate, endOfPreviousMonthDate);
+    await ServerTableService.updateLastStrikeResetEntryByServerId(guildId);
+
     return;
   } catch (error) {
     Logger.error(error);

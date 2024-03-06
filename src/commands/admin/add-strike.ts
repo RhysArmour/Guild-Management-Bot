@@ -1,8 +1,9 @@
-import { ApplicationCommandOptionType } from 'discord.js';
+import { APIEmbed, ApplicationCommandOptionType } from 'discord.js';
 import { Logger } from '../../logger';
 import { strikeChoicesAutocomplete } from '../../utils/helpers/commandVariables';
 import { addStrike } from '../../methods/add-strike';
 import { Command } from '../../classes/Commands';
+import { ServerTableService } from '../../database/services/server-services';
 
 export default new Command({
   name: 'addstrikes',
@@ -88,12 +89,19 @@ export default new Command({
       //     content: undefined,
       //   };
       // }
+      const server = await ServerTableService.getServerTableByServerId(interaction.guildId);
 
-      const strikes = await addStrike(interaction);
+      if (!server) {
+        return {};
+      }
+
+      const strikes = await addStrike(interaction, server);
+
+      const result: APIEmbed = { title: 'Added Strikes', fields: [{ name: 'Content', value: strikes }] };
 
       Logger.info('Strikes Added');
 
-      return strikes;
+      return result;
     } catch (error) {
       Logger.error(error);
       await interaction.reply({

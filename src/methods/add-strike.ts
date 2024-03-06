@@ -2,37 +2,36 @@ import { CommandInteraction, GuildMember, InteractionType, TextChannel } from 'd
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
-import { StrikeValuesTableService } from '../database/services/strike-values-services';
-import { ChannelTableService } from '../database/services/channel-services';
+import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
-export const addStrike = async (interaction: CommandInteraction) => {
+export const addStrike = async (interaction: CommandInteraction, server: ServerWithRelations) => {
   try {
     if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
       Logger.info('Interaction is not an Application Command');
       return undefined;
     }
+
     Logger.info('Beginning Adding Strike');
 
-    const serverId = interaction.guildId!;
-    const { strikeChannelId, strikeChannelName } = await ChannelTableService.getChannelsByServerId(serverId);
+    const { strikeChannelId, strikeChannelName } = server.channels;
 
     if (!strikeChannelId || !strikeChannelName) {
       Logger.error('Strike channel not found in the database.');
       await interaction.reply({
-        content: 'Strike channel not found in the database.',
+        content:
+          'Strike channel not found in the database. Please set up the server channels using the command /setupchannels',
         ephemeral: true,
       });
       return;
     }
 
-    Logger.info(`Database entry found for server: ${serverId}`);
+    Logger.info(`Channels found for server: ${server.serverId}`);
 
     const strike = ':x:';
     let message = '';
     const length = interaction.options.data.length;
-    let reply = '';
 
-    Logger.info(`Server ID: ${serverId}`);
+    Logger.info(`Server ID: ${server.serverId}`);
     Logger.info(`Strike Channel Name & ID: ${strikeChannelName}: ${strikeChannelId}`);
 
     for (let i = 0; i < length / 2; i += 1) {
@@ -45,42 +44,23 @@ export const addStrike = async (interaction: CommandInteraction) => {
 
       Logger.info(`Processing strike for User ID: ${id}, Username: ${displayName}, Reason: ${reason}`);
 
-      let memberRecord = await MemberTableServices.getMemberWithMember(member);
+      const strikeReason = server.guildStrikes.find((strike) => strike.strikeReason === reason);
 
-      if (!memberRecord) {
-        memberRecord = await MemberTableServices.createMemberWithMember(member);
-      }
-
-      const strikeValue = await StrikeValuesTableService.getIndividualStrikeValueByInteraction(interaction, reason);
+      const strikeValue = strikeReason ? strikeReason.value : 1;
 
       const result = await MemberTableServices.addMemberStrikesWithMember(member, strikeValue);
-      const reasons = await StrikeReasonsServices.createStrikeReasonByMember(member, reason);
-
-      Logger.info(result);
-      Logger.info(`Reasons: ${reasons}`);
+      await StrikeReasonsServices.createStrikeReasonByMember(member, reason);
 
       message += `- ${strike} has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${
         result.strikes
       } strikes ${strike.repeat(result.strikes)}\n\n`;
-      reply += `- Strike for ${displayName} has been updated. ${displayName} now has ${result.strikes} strikes\n\n`;
     }
-
-    Logger.info(`Strike Message: ${message}`);
-    Logger.info(`Reply Message: ${reply}`);
-
-    await interaction.followUp({
-      content: reply,
-      ephemeral: true,
-    });
 
     const strikeChannel = interaction.guild?.channels.cache.get(strikeChannelId!.toString()) as TextChannel;
     if (strikeChannel) {
       await strikeChannel.send(message);
       Logger.info(`Strike message sent to strike channel with ID: ${strikeChannelName}`);
-      return {
-        message: 'strikes successfully added',
-        content: message,
-      };
+      return message;
     } else {
       Logger.error(`Strike channel with ID ${strikeChannelId} does not exist.`);
     }

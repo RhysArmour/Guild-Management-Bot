@@ -1,14 +1,14 @@
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
-import { MemberTableServices } from '../../database/services/member-services';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 
 export default new Command({
   name: 'checkallstrikes',
   description: 'Check strikes for all members',
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server: ServerWithRelations) => {
     try {
       const serverId = interaction.guildId;
-      const result = await MemberTableServices.getAllGuildStrikesByInteraction(interaction);
+      const result = server.members.filter((member) => member.strikes > 0);
 
       Logger.info(`Received strike list: ${JSON.stringify(result)}`);
 
@@ -21,18 +21,22 @@ export default new Command({
         }\n`;
       });
 
+      if (message === '') {
+        message = 'There are currently no strikes within the guild.';
+      }
+
       Logger.info(`Sending strike list response for server ID: ${serverId}`);
 
       return {
-        content: result,
-        message,
+        title: 'Check All Strikes',
+        fields: [{ name: 'Message', value: message }],
       };
     } catch (error) {
       Logger.error(`Error while checking all strikes: ${error}`);
-      await interaction.reply({
-        content: 'An error occurred while checking all strikes.',
-        ephemeral: true,
-      });
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occured whilst checking all active strikes.' }],
+      };
     }
   },
 });
