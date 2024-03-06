@@ -1,7 +1,6 @@
 import { Logger } from '../../logger';
 import prisma from '../../classes/PrismaClient';
 import { CommandInteraction } from 'discord.js';
-import { Prisma } from '@prisma/client';
 import { IStrikeValue } from '../../interfaces/database/strike-values';
 
 export class StrikeValuesTableService {
@@ -60,48 +59,6 @@ export class StrikeValuesTableService {
     }
   }
 
-  static async deleteStrikeValuesEntryByInteraction(
-    interaction: CommandInteraction,
-    data: Prisma.GuildStrikeValuesUpdateInput,
-  ) {
-    try {
-      Logger.info('Starting deleteStrikeValuesEntryByInteraction method');
-      const uniqueId = `${interaction.guildId} - ${data.strikeReason}`;
-      const deletedStrikeValue = await prisma.guildStrikeValues.delete({
-        where: { uniqueId },
-      });
-
-      Logger.info(
-        `Deleted strike value entry for strike reason ${data.strikeReason} on server ${interaction.guild.name}`,
-      );
-      return deletedStrikeValue;
-    } catch (error) {
-      Logger.error(`Error deleting strike value entry: ${error}`);
-      throw new Error('Failed to delete strike value entry');
-    }
-  }
-
-  static async getStrikeValueObjectByInteraction(interaction: CommandInteraction, reason: string) {
-    try {
-      Logger.info('Starting getStrikeValueObjectByInteraction method');
-      const uniqueId = `${interaction.guildId} - ${reason}`;
-      const strikeValueEntry = await prisma.guildStrikeValues.findUnique({
-        where: { uniqueId },
-      });
-
-      if (strikeValueEntry) {
-        Logger.info(`Retrieved strike value entry for strike reason ${reason} on server ${interaction.guild.name}`);
-      } else {
-        Logger.warn(`Strike value entry not found for strike reason ${reason} on server ${interaction.guild.name}`);
-      }
-
-      return strikeValueEntry;
-    } catch (error) {
-      Logger.error(`Error getting strike value entry: ${error}`);
-      throw new Error('Failed to get strike value entry');
-    }
-  }
-
   static async getIndividualStrikeValueByInteraction(interaction: CommandInteraction, reason: string) {
     try {
       Logger.info('Starting getIndividualStrikeValueByInteraction method');
@@ -118,30 +75,6 @@ export class StrikeValuesTableService {
         result = strikeValueEntry.value;
       } else {
         Logger.warn(`Strike value entry not found for strike reason ${reason} on server ${interaction.guild.name}`);
-        result = 1;
-      }
-
-      return result;
-    } catch (error) {
-      Logger.error(`Error getting strike value entry: ${error}`);
-      throw new Error('Failed to get strike value entry');
-    }
-  }
-
-  static async getIndividualStrikeValueByServerId(serverId: string, reason: string) {
-    try {
-      Logger.info('Starting getIndividualStrikeValueByInteraction method');
-      const uniqueId = `${serverId} - ${reason}`;
-      const strikeValueEntry = await prisma.guildStrikeValues.findUnique({
-        where: { uniqueId },
-      });
-      let result: number;
-
-      if (strikeValueEntry) {
-        Logger.info(`Retrieved strike value (${strikeValueEntry.value}) entry for strike reason ${reason}`);
-        result = strikeValueEntry.value;
-      } else {
-        Logger.warn(`Strike value entry not found for strike reason ${reason}`);
         result = 1;
       }
 

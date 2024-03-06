@@ -57,17 +57,6 @@ export class ChannelTableService {
     }
   }
 
-  static async deleteChannelEntry(serverId: string) {
-    try {
-      return await prisma.guildChannelsTable.delete({
-        where: { serverId },
-      });
-    } catch (error) {
-      Logger.error(`Error deleting channel entry: ${error}`);
-      throw new Error('Failed to delete channel entry');
-    }
-  }
-
   static async getChannelsByServerId(serverId: string) {
     try {
       return await prisma.guildChannelsTable.findUnique({

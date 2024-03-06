@@ -1,39 +1,42 @@
-import { CommandInteractionOptionResolver } from 'discord.js';
+import { APIEmbed, CommandInteractionOptionResolver } from 'discord.js';
 import { client } from '../bot';
 import { Event } from '../classes/Event';
 import { ExtendedAutocompleteInteraction, ExtendedInteraction } from '../interfaces/discord/Command';
 import { Logger } from '../logger';
-
-interface IInteractionResult {
-  message: string;
-  content: unknown;
-}
+import { ServerTableService } from '../database/services/server-services';
 
 export default new Event('interactionCreate', async (interaction) => {
   // Chat Input Commands
   if (interaction.isChatInputCommand()) {
     Logger.info('Starting Interaction');
     await interaction.deferReply();
+    Logger.info('Reply deferred');
     const command = client.commands.get(interaction.commandName);
     if (!command) {
       Logger.error('Interaction Failed. Non-Existing Command.');
       return interaction.followUp('You have used a non-existing command');
     }
-
+    Logger.info('Received Command List.');
     try {
       Logger.info(`Executing command: ${command.name}`);
-      const result: IInteractionResult = await command.execute({
-        args: interaction.options as CommandInteractionOptionResolver,
-        client,
-        interaction: interaction as ExtendedInteraction,
-      });
+      Logger.info(`Checking server has been registered for server: ${interaction.guildId}`);
+      const server = await ServerTableService.getServerTableByServerId(interaction.guildId);
+      if (command.name !== 'setupserver' && !server) {
+        Logger.warn(`Server: ${interaction.guildId} has not been configured.`);
+        return 'Server has not been set up. Please set up the server using the command: /setupserver, /setuproles, /setuplimits and /setupchannels';
+      }
+      const result: APIEmbed = await command.execute(
+        {
+          args: interaction.options as CommandInteractionOptionResolver,
+          client,
+          interaction: interaction as ExtendedInteraction,
+        },
+        server,
+      );
 
       // Successful execution
       Logger.info('Command executed successfully!');
-      await interaction.followUp({
-        content: result.message,
-        ephemeral: true,
-      });
+      await interaction.followUp({ embeds: [result] });
     } catch (error) {
       Logger.error(`Error while executing ${command.name}: ${error}`);
       // Error during execution

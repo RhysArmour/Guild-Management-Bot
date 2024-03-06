@@ -7,21 +7,21 @@ export default new Command({
   description: 'remove all strikes from all players',
   defaultMemberPermissions: 'KickMembers',
 
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server) => {
     try {
       Logger.info('Remove All Strikes command executed');
-      const result = await removeAllStrikes(interaction);
+      const result = await removeAllStrikes(interaction, server);
       Logger.info('All Strikes Removed');
       return {
-        content: result,
-        message: 'All member strikes and strike reasons have been removed.',
+        title: 'Remove all strikes',
+        fields: [{ name: 'Message', value: result }],
       };
     } catch (error) {
       Logger.error(error);
-      await interaction.reply({
-        content: 'Something went wrong.',
-        ephemeral: true,
-      });
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occurred whilst removing strikes.' }],
+      };
     }
   },
 });

@@ -1,55 +1,62 @@
 import { MemberTableServices } from '../database/services/member-services';
-import { RoleTableService } from '../database/services/role-services';
-import { StrikeValuesTableService } from '../database/services/strike-values-services';
 import { Logger } from '../logger';
-import { Message } from 'discord.js';
+import { APIEmbed, Guild } from 'discord.js';
 import { choices } from '../utils/helpers/commandVariables';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
+import { ServerWithRelations } from '../interfaces/database/server-table-interface';
+import { currentDate } from '../utils/helpers/get-date';
 
-const isolateTickets = (message: Message) => {
-  Logger.info('Isolating Tickets');
-  const re = /([(])([0-9]|[1-9][0-9]|[1-4][0-9][0-9])([/])([5][0][0])([)])/g;
-  const listOfTickets = message.content.replace(/([*])|\s/g, '').match(re);
-  return listOfTickets;
-};
+interface TicketStrikes {
+  response: string;
+  awayMembers: string;
+  unregisteredMembers: string;
+}
 
-const ticketStrikes = async (message: Message) => {
-  const mentions = message.mentions.members.map((member) => member);
-  const serverId = message.guild.id;
-  const tickets = Object.values(isolateTickets(message));
-  Logger.info('Retrieving Absent Role');
-  const { absenceRoleId } = await RoleTableService.getRolesByServerId(serverId);
-  Logger.info('Absent Role retrieved successfully ');
+interface Offenders {
+  playerName: string;
+  playerId: string;
+  tickets: number;
+  lifetimeTickets: number;
+}
+
+export const addTicketStrikes = async (offenders: Offenders[], server: ServerWithRelations, discordGuild: Guild) => {
+  const { absenceRoleId } = server.roles;
 
   let response = '';
   let awayMembers = '';
+  let unregisteredMembers = '';
 
   try {
-    let strikeValue = 1;
-    const ticketStrikeValue = await StrikeValuesTableService.getIndividualStrikeValueByServerId(
-      serverId,
-      choices[0].name,
-    );
+    if (offenders) {
+      let strikeValue = 1;
+      Logger.info('Getting ticket Strike Value');
+      const ticketStrikeRecord = server.guildStrikes.find((strike) => strike.strikeReason === choices[0].name);
 
-    if (ticketStrikeValue) {
-      strikeValue = ticketStrikeValue;
-    }
-
-    for (let i = 0; i < mentions.length; i++) {
-      const member = mentions[i];
-      const ticket = tickets.shift();
-
-      if (member.roles.cache.some((role) => role.id === absenceRoleId)) {
-        awayMembers += `${member.displayName}\n`;
-        continue;
+      if (ticketStrikeRecord) {
+        strikeValue = ticketStrikeRecord.value;
       }
 
-      await MemberTableServices.addMemberStrikesWithMember(member, strikeValue);
-      await StrikeReasonsServices.createStrikeReasonByMember(member, `Ticket Strike ${ticket}`);
-      const { strikes } = await MemberTableServices.getAllStrikeReasonsByMember(member);
-      const strike = ':x:';
+      Logger.info(`Ticket Strike Value: ${strikeValue}`);
 
-      response += `<@${member.id}> - ${strike.repeat(strikes)} - Missed Tickets${ticket}\n`;
+      for (const entry of offenders) {
+        const member = server.members.find((member) => member.playerId === entry.playerId);
+        if (!member) {
+          unregisteredMembers += `${entry.playerName}\n`;
+          continue;
+        }
+        const discordMember = await discordGuild.members.fetch(member.memberId);
+
+        if (discordMember.roles.cache.some((role) => role.id === absenceRoleId)) {
+          awayMembers += `${discordMember.displayName}\n`;
+          continue;
+        }
+
+        await MemberTableServices.addMemberStrikesWithMember(discordMember, strikeValue);
+        await StrikeReasonsServices.createStrikeReasonByMember(discordMember, `Ticket Strike ${entry.tickets}`);
+        const { strikes } = await MemberTableServices.getAllStrikeReasonsByMember(discordMember);
+        const strike = ':x:';
+        response += `<@${discordMember.id}> - ${strike.repeat(strikes)} - Missed Tickets: ${entry.tickets}/600\n`;
+      }
     }
   } catch (error) {
     Logger.error(`Error in ticketStrikes: ${error}`);
@@ -59,36 +66,59 @@ const ticketStrikes = async (message: Message) => {
     response = 'No ticket strikes today. Well done everyone!';
   }
 
-  Logger.info('response:', response);
-
   const result = {
     response,
     awayMembers,
+    unregisteredMembers,
   };
 
   return result;
 };
 
-export const ticketStrikeMessage = async (message: Message) => {
-  const date = new Date();
-  const day = date.getDate();
-  const month = date.toLocaleString('default', { month: 'long' });
-  const serverId = message.guild.id;
-  const { response, awayMembers } = await ticketStrikes(message);
-  let reply = `Strikes for ${day} ${month}: \n\n${response}`;
-  const { absenceRoleName } = await RoleTableService.getRolesByServerId(serverId);
-  const awayReply = `The following Members are excused due to being ${absenceRoleName}: \n\n${awayMembers}`;
+export const ticketStrikeMessage = async (
+  ticketStrikes: TicketStrikes,
+  server: ServerWithRelations,
+): Promise<APIEmbed> => {
+  const { currentDay, currentMonth } = currentDate('long');
+  const { response, awayMembers, unregisteredMembers } = ticketStrikes;
+  const title = `Ticket Strikes for ${currentDay} ${currentMonth}:`;
+  const { absenceRoleName } = server.roles;
+  let strikeReply = 'No ticket strikes today! Well done everyone!';
+  let excusedReply = `No one ${absenceRoleName} missed tickets!`;
+  let unregisteredMembersReply = ``;
 
-  if (
-    awayReply !== `The following Members are excused due to being ${absenceRoleName}: \n\n` &&
-    reply !== `Strikes for ${day} ${month}: \n\n`
-  ) {
-    reply += `\n\n${awayReply}`;
+  if (response) {
+    strikeReply = response;
   }
 
-  if (reply === `Strikes for ${day} ${month}: \n\n` && !awayReply.includes(awayMembers)) {
-    reply = `No ticket strikes today! Well done everyone!\n\n${awayReply}`;
+  if (awayMembers) {
+    excusedReply = awayMembers;
+  }
+
+  if (unregisteredMembers) {
+    unregisteredMembersReply = unregisteredMembers;
+  }
+
+  let reply = {
+    title,
+    fields: [
+      { name: 'Strikes', value: strikeReply },
+      { name: 'Excused', value: excusedReply },
+      { name: 'Unregistered', value: unregisteredMembersReply },
+    ],
+  };
+
+  if (!unregisteredMembersReply) {
+    reply = {
+      title,
+      fields: [
+        { name: 'Strikes', value: strikeReply },
+        { name: 'Excused', value: excusedReply },
+      ],
+    };
   }
 
   return reply;
 };
+
+// COMPLETED TESTING FOR AUTO TICKET STRIKES (FOR NOW). RUN TESTING FOR PRE-REGISTERED SERVERS & MEMBERS, WILL REQUIRE DB MANIPULATION.

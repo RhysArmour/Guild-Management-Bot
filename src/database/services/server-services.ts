@@ -1,50 +1,42 @@
 import { IGuildServer } from '../../interfaces/methods/bot-setup';
 import { Logger } from '../../logger';
 import prisma from '../../classes/PrismaClient';
-import { CommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, CommandInteraction } from 'discord.js';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
+import { Comlink } from '../../classes/Comlink';
 
 export class ServerTableService {
-  static async createServerTableEntryByInteraction(interaction: CommandInteraction) {
-    try {
-      const serverId = interaction.guildId;
-      const serverName = interaction.guild.name;
-
-      const newServer = await prisma.serverTable.create({
-        data: {
-          createdDate: new Date().toISOString(),
-          updatedDate: new Date().toISOString(),
-          serverId,
-          serverName,
-        },
-      });
-
-      Logger.info(`Created server entry for server: ${serverName}`);
-      return newServer;
-    } catch (error) {
-      Logger.error(`Error creating server entry: ${error}`);
-      throw new Error('Failed to create server entry');
-    }
+  private static async getGameData(allyCode: string) {
+    Logger.info('Getting Player Data.');
+    const playerData = await Comlink.getPlayerByAllyCode(allyCode);
+    Logger.info('Getting Guild Info.');
+    const guildData = await Comlink.getGuildInfoByGuildId(playerData.guildId);
+    return {
+      playerData,
+      guildData,
+    };
   }
 
   static async createServerTableEntryByInteractionWithData(interaction: CommandInteraction, serverData: IGuildServer) {
     try {
-      const { triggerPhrase, strikeResetPeriod } = serverData;
-      const strikeResetPeriodValue = strikeResetPeriod ? strikeResetPeriod : 1;
-      const serverId = interaction.guildId;
-      const serverName = interaction.guild.name;
-
+      const { playerData, guildData } = await this.getGameData(serverData.allyCode);
+      const guildResetTime = new Date(parseFloat(guildData.guild.nextChallengesRefresh) * 1000);
       const newServer = await prisma.serverTable.create({
         data: {
           createdDate: new Date().toISOString(),
           updatedDate: new Date().toISOString(),
-          triggerPhrase,
-          strikeResetPeriod: strikeResetPeriodValue,
-          serverId,
-          serverName,
+          triggerPhrase: '',
+          strikeResetPeriod: 1,
+          serverId: interaction.guildId,
+          serverName: interaction.guild.name,
+          guildId: playerData.guildId,
+          guildName: playerData.guildName,
+          ticketStrikesActive: serverData.ticketStrikesEnabled,
+          guildResetTime,
         },
       });
 
-      Logger.info(`Created server entry for server: ${serverName}`);
+      Logger.info(`Created server entry for server: ${newServer.serverName}`);
       return newServer;
     } catch (error) {
       Logger.error(`Error creating server entry: ${error}`);
@@ -52,34 +44,42 @@ export class ServerTableService {
     }
   }
 
-  static async updateServerTableEntryByInteraction(interaction: CommandInteraction, serverData: IGuildServer) {
+  static async updateServerTable(interaction: ChatInputCommandInteraction, serverData: IGuildServer) {
     try {
-      const serverId = interaction.guildId;
-      const existingRecord = await this.getServerTableByServerId(serverId);
+      const { guildData } = await this.getGameData(serverData.allyCode);
+      const dateInEpoch = Number(guildData.guild.nextChallengesRefresh) * 1000;
+      const guildResetTime = new Date(dateInEpoch);
 
-      let { triggerPhrase, strikeResetPeriod } = serverData;
-
-      if (!triggerPhrase) {
-        triggerPhrase = existingRecord.triggerPhrase;
-      }
-
-      if (!strikeResetPeriod) {
-        strikeResetPeriod = existingRecord.strikeResetPeriod;
-      }
-
-      const updatedServer = await prisma.serverTable.update({
-        where: { serverId },
+      const updatedRecord = await prisma.serverTable.update({
+        where: { serverId: interaction.guildId },
         data: {
-          triggerPhrase,
-          strikeResetPeriod,
+          guildResetTime,
+          ticketStrikesActive: serverData.ticketStrikesEnabled,
+          updatedDate: new Date().toISOString(),
         },
       });
-
-      Logger.info(`Updated server entry for server: ${existingRecord.serverName}`);
-      return updatedServer;
+      return updatedRecord;
     } catch (error) {
-      Logger.error(`Error updating server entry: ${error}`);
-      throw new Error('Failed to update server entry');
+      Logger.info(error);
+    }
+  }
+
+  static async updateServerTableGuildResetTime(server: ServerWithRelations) {
+    try {
+      const date = new Date(server.guildResetTime);
+      date.setHours(date.getHours() + Math.round(date.getMinutes() / 60));
+      date.setMinutes(30, 0, 0);
+      const newGuildReset = new Date(date.setDate(server.guildResetTime.getDate() + 1));
+      const updatedRecord = await prisma.serverTable.update({
+        where: { serverId: server.serverId },
+        data: {
+          guildResetTime: newGuildReset,
+          updatedDate: new Date().toISOString(),
+        },
+      });
+      return updatedRecord;
+    } catch (error) {
+      Logger.info(error);
     }
   }
 
@@ -108,6 +108,13 @@ export class ServerTableService {
     try {
       const serverRecord = await prisma.serverTable.findUnique({
         where: { serverId },
+        include: {
+          channels: true,
+          guildStrikes: true,
+          limits: true,
+          members: true,
+          roles: true,
+        },
       });
 
       if (serverRecord) {
@@ -115,6 +122,35 @@ export class ServerTableService {
       }
 
       return serverRecord;
+    } catch (error) {
+      Logger.error(`Error getting server entry: ${error}`);
+      return;
+    }
+  }
+
+  static async getGuildResetTimes() {
+    try {
+      const date = new Date();
+      date.setHours(date.getHours() + Math.round(date.getMinutes() / 60));
+      date.setMinutes(30, 0, 0);
+
+      const serverRecord = await prisma.serverTable.findMany({
+        where: { guildResetTime: date },
+        include: {
+          channels: true,
+          guildStrikes: true,
+          limits: true,
+          members: true,
+          roles: true,
+        },
+      });
+
+      if (serverRecord.length) {
+        Logger.info(`Existing Reset Time`);
+        return serverRecord;
+      }
+
+      return;
     } catch (error) {
       Logger.error(`Error getting server entry: ${error}`);
       return;

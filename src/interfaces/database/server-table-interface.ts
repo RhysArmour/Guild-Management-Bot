@@ -3,7 +3,17 @@ import { ILimits } from './limits-interface';
 import { IMember } from './member-interface';
 import { IRoles } from './roles-interface';
 import { IStrikeValues } from './strike-values-interface';
+import { Prisma } from '@prisma/client';
 
+export type ServerWithRelations = Prisma.ServerTableGetPayload<{
+  include: {
+    channels: true;
+    guildStrikes: true;
+    limits: true;
+    members: true;
+    roles: true;
+  };
+}>;
 
 export interface IServer {
   serverId: string;

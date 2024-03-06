@@ -1,15 +1,15 @@
-export function currentDate() {
-  const currentYear = new Date().getUTCFullYear();
-  const currentMonth = new Date().getMonth();
-  const currentDay = new Date().getDate();
-
+export function currentDate(month: string) {
   const todayDate = new Date();
+
+  const currentYear = todayDate.getUTCFullYear();
+  const currentMonth = month === 'long' ? todayDate.toLocaleString('default', { month: 'long' }) : todayDate.getMonth();
+  const currentDay = todayDate.getDate();
 
   return { todayDate, currentDay, currentMonth, currentYear };
 }
 
 export function getLastMonthFullDate() {
-  const { todayDate } = currentDate();
+  const { todayDate } = currentDate('short');
 
   const thisMonth = todayDate.getMonth();
 

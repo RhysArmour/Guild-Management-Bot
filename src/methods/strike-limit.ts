@@ -1,16 +1,15 @@
 import { GuildMember, TextChannel } from 'discord.js';
-import { ChannelTableService } from '../database/services/channel-services';
 import { MemberTableServices } from '../database/services/member-services';
-import { LimitsTableService } from '../database/services/limits-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
 import { StrikeValuesTableService } from '../database/services/strike-values-services';
+import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
-export const strikeLimitReached = async (member: GuildMember) => {
-  const { strikeLimitChannelId } = await ChannelTableService.getChannelsByServerId(member.guild.id);
+export const strikeLimitReached = async (member: GuildMember, server: ServerWithRelations) => {
+  const { strikeLimitChannelId } = server.channels;
+  const { strikeLimit } = server.limits;
   const { strikeReasons } = await MemberTableServices.getAllStrikeReasonsByMember(member);
-  const { strikeLimit } = await LimitsTableService.getLimitsByServerId(member.guild.id);
 
-  const filteredReasons = await StrikeReasonsServices.filterStrikeByResetPeriod(strikeReasons, member.guild.id);
+  const filteredReasons = await StrikeReasonsServices.filterStrikeByResetPeriod(strikeReasons, server);
   const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(
     member.guild.id,
   );

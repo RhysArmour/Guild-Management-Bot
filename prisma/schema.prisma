@@ -11,18 +11,22 @@ datasource db {
 }
 
 model ServerTable {
-  serverId          String              @unique
-  serverName        String
-  strikeResetPeriod Int                 @default(1)
-  lastStrikeReset   DateTime?
-  triggerPhrase     String?
-  createdDate       DateTime
-  updatedDate       DateTime
-  members           GuildMembersTable[]
-  channels          GuildChannelsTable?
-  guildStrikes      GuildStrikeValues[]
-  limits            GuildLimitsTable?
-  roles             GuildRolesTable?
+  serverId            String              @id @unique
+  serverName          String
+  guildId             String?
+  guildName           String?
+  strikeResetPeriod   Int                 @default(1)
+  lastStrikeReset     DateTime?
+  triggerPhrase       String?
+  guildResetTime      DateTime?
+  ticketStrikesActive Boolean?            @default(true)
+  createdDate         DateTime
+  updatedDate         DateTime
+  members             GuildMembersTable[]
+  channels            GuildChannelsTable?
+  guildStrikes        GuildStrikeValues[]
+  limits              GuildLimitsTable?
+  roles               GuildRolesTable?
 }
 
 model GuildChannelsTable {
@@ -76,6 +80,9 @@ model GuildMembersTable {
   serverName              String
   memberId                String
   name                    String
+  allyCode                String?
+  playerName              String?
+  playerId                String?               @unique
   username                String?
   strikes                 Int                   @default(0)
   strikeReasons           MemberStrikeReasons[]

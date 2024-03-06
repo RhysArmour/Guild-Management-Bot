@@ -30,11 +30,15 @@ export default new Command({
 
       Logger.info('Removing Roles Completed');
       return {
-        content: undefined,
-        message: reply,
+        title: 'Remove Role',
+        fields: [{ name: 'Message', value: reply }],
       };
     } catch (error) {
       Logger.error(`Error: ${error}`);
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occurred whilst removing roles.' }],
+      };
     }
   },
 });

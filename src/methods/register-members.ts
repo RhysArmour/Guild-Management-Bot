@@ -1,77 +1,31 @@
-import { CommandInteraction, GuildMember } from 'discord.js';
-import { RoleTableService } from '../database/services/role-services';
+import { ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import { MemberTableServices } from '../database/services/member-services';
 import { Logger } from '../logger';
+import { ServerWithRelations } from '../interfaces/database/server-table-interface';
+import { Comlink } from '../classes/Comlink';
 
-const processedMembers = [];
-
-const processMember = async (member: GuildMember, guildRoleId: string) => {
+export const registerMembers = async (interaction: ChatInputCommandInteraction, server: ServerWithRelations) => {
   try {
-    const existingMember = await MemberTableServices.getMemberWithMember(member);
+    await interaction.guild.members.fetch();
+    const allyCode = interaction.options.getString('allycode');
+    let member = interaction.options.getMember('member') as GuildMember;
 
-    processedMembers.push(member.displayName);
-
-    if (!existingMember && member.roles.cache.has(guildRoleId)) {
-      await MemberTableServices.createMemberWithMember(member);
-      Logger.info(`Created member ${member.displayName}`);
-      return {
-        action: 'created',
-        displayName: member.displayName,
-      };
-    } else if (existingMember && !member.roles.cache.has(guildRoleId)) {
-      await MemberTableServices.deleteMemberWithMember(member);
-      Logger.info(`Deleted member ${member.displayName}`);
-      return {
-        action: 'deleted',
-        displayName: member.displayName,
-      };
-    }
-    return {
-      action: 'No Action',
-      displayName: member.displayName,
-    };
-  } catch (error) {
-    Logger.error(`Error processing Members: ${error}`);
-  }
-};
-
-export const registerMembers = async (interaction: CommandInteraction) => {
-  try {
-    const { guildRoleId } = await RoleTableService.getRolesByServerId(interaction.guildId);
-    const members = await interaction.guild.members.fetch();
-    const realMembers = members.filter((member) => !member.user.bot);
-
-    const actions = await Promise.all(realMembers.map((member) => processMember(member, guildRoleId)));
-    const newMembers = actions.filter((action) => action?.action === 'created').map((action) => action.displayName);
-    const deletedMembers = actions.filter((action) => action?.action === 'deleted').map((action) => action.displayName);
-
-    const fetchRegisteredMembers = await MemberTableServices.getAllMembersByServerId(interaction.guildId);
-
-    const registeredMembers = fetchRegisteredMembers.map((member) => member.name);
-
-    const unProcessedRegisteredMembers = registeredMembers.filter((member) => !processedMembers.includes(member));
-
-    if (unProcessedRegisteredMembers) {
-      Logger.info('Deleting Members who have left the server.');
-      unProcessedRegisteredMembers.forEach(async (member) => {
-        await MemberTableServices.deleteMemberWithServerIdAndDisplayName(interaction.guildId, member);
-        deletedMembers.push(member);
-      });
+    if (!member) {
+      member = interaction.member as GuildMember;
     }
 
-    const newMemberResponse = newMembers.length > 0 ? `New Members Registered:\n${newMembers.join('\n')}\n` : '';
-    const deletedMembersResponse =
-      deletedMembers.length > 0
-        ? `Members Unregistered due to no longer being in the guild:\n${deletedMembers.join('\n')}\n`
-        : '';
-    const formattedResponse =
-      newMemberResponse + deletedMembersResponse || 'Command executed successfully but there were no updates.';
+    const playerData = await Comlink.getPlayerByAllyCode(allyCode);
 
-    Logger.info('Successfully registered members');
-    return {
-      message: formattedResponse,
-      content: undefined,
-    };
+    const existingMember = server.members.find((entry) => entry.memberId === member.user.id);
+
+    if (existingMember) {
+      Logger.info(`Member is already registered to ${existingMember.serverName}. Updating Record.`);
+      await MemberTableServices.updateMemberWithMember(member, playerData, allyCode);
+      return `Member was already registered to ${existingMember.serverName}. Updated Records.`;
+    } else {
+      const newMember = await MemberTableServices.createMemberWithMember(member, playerData, allyCode);
+      return `${member.displayName} registered to ${allyCode} in ${newMember.serverName}.`;
+    }
   } catch (error) {
     Logger.error(`Error in registerMembers: ${error}`);
     throw new Error('Failed to register members');

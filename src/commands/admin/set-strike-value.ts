@@ -2,6 +2,7 @@ import { ApplicationCommandOptionType } from 'discord.js';
 import { Logger } from '../../logger';
 import { strikeChoicesAutocomplete } from '../../utils/helpers/commandVariables';
 import { StrikeValuesTableService } from '../../database/services/strike-values-services';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 
 export default {
   name: 'setstrikevalue',
@@ -25,14 +26,13 @@ export default {
   autocomplete: async ({ interaction }) => {
     await strikeChoicesAutocomplete(interaction);
   },
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server: ServerWithRelations) => {
     try {
       Logger.info('Add Strikes command executed');
-
       const strikeReason = interaction.options.getString('strike') as string;
       const value = interaction.options.getInteger('value');
 
-      const existingValue = await StrikeValuesTableService.getStrikeValueObjectByInteraction(interaction, strikeReason);
+      const existingValue = server.guildStrikes.find((strike) => strike.strikeReason === strikeReason);
 
       if (!existingValue) {
         await StrikeValuesTableService.createStrikeValuesByInteraction(interaction, { strikeReason, value });
@@ -42,15 +42,15 @@ export default {
       Logger.info('Strike value added');
 
       return {
-        content: undefined,
-        message: 'Strike value updated.',
+        title: 'Set Strike Value',
+        fields: [{ name: 'Message', value: 'Strike value updated.' }],
       };
     } catch (error) {
       Logger.error(error);
-      await interaction.reply({
-        content: 'Something went wrong.',
-        ephemeral: true,
-      });
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occurred whilst setting strike value.' }],
+      };
     }
   },
 };

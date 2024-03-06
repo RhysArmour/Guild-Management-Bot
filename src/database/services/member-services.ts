@@ -1,13 +1,20 @@
 import { Logger } from '../../logger';
 import prisma from '../../classes/PrismaClient';
 
-import { CommandInteraction, GuildMember, Role } from 'discord.js';
+import { GuildMember, Role } from 'discord.js';
 import { RoleTableService } from './role-services';
 import { LimitsTableService } from './limits-services';
-import { IMember } from '../../interfaces/database/member-interface';
+import { Comlink } from '../../classes/Comlink';
+import { GuildMembersTable } from '@prisma/client';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
+import { PlayerData } from '../../interfaces/comlink/playerData';
 
 export class MemberTableServices {
-  static async createMemberWithMember(member: GuildMember): Promise<IMember> {
+  static async createMemberWithMember(
+    member: GuildMember,
+    playerData: PlayerData,
+    allyCode: string,
+  ): Promise<GuildMembersTable> {
     const serverId = member.guild.id;
     const { displayName: name } = member;
 
@@ -31,10 +38,52 @@ export class MemberTableServices {
         memberId: member.id,
         name,
         username: member.user.username,
+        allyCode,
+        playerId: playerData.playerId,
+        playerName: playerData.name,
         strikes: 0,
         lifetimeStrikes: 0,
         absent: false,
         createdDate: new Date().toISOString(),
+        updatedDate: new Date().toISOString(),
+      },
+    });
+
+    return result;
+  }
+
+  static async updateMemberWithMember(
+    member: GuildMember,
+    playerData: PlayerData,
+    allyCode: string,
+  ): Promise<GuildMembersTable> {
+    const serverId = member.guild.id;
+    const { displayName: name } = member;
+
+    Logger.info(`Creating member with ID: ${member.id} for server: ${member.guild.name}`);
+
+    const result = await prisma.guildMembersTable.update({
+      where: { playerId: playerData.playerId },
+      data: {
+        uniqueId: `${serverId} - ${member.id}`,
+        serverName: member.guild.name,
+        server: {
+          connectOrCreate: {
+            where: { serverId },
+            create: {
+              serverId,
+              serverName: member.guild.name,
+              createdDate: new Date().toISOString(),
+              updatedDate: new Date().toISOString(),
+            },
+          },
+        },
+        memberId: member.id,
+        name,
+        username: member.user.username,
+        allyCode,
+        playerId: playerData.playerId,
+        playerName: playerData.name,
         updatedDate: new Date().toISOString(),
       },
     });
@@ -65,16 +114,6 @@ export class MemberTableServices {
     return record;
   }
 
-  static async updateAllStrikesWithServerId(serverId: string) {
-    Logger.info(`Updating server with ID: ${serverId}`);
-    return prisma.guildMembersTable.updateMany({
-      where: { serverId },
-      data: {
-        strikes: 0,
-      },
-    });
-  }
-
   static async updateMemberStrikesByGuildMember(member: GuildMember, strikeValue: number) {
     Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
     const existingRecord = await this.getMemberWithMember(member);
@@ -83,30 +122,6 @@ export class MemberTableServices {
       data: {
         strikes: existingRecord.strikes - strikeValue,
         lifetimeStrikes: existingRecord.lifetimeStrikes - strikeValue,
-      },
-    });
-  }
-
-  // TODO: Work out and implement type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static async updateMemberStrikesByPrismaMember(member: any, strikeValue: number) {
-    Logger.info(`Updating member with ID: ${member.memberId}`);
-    const existingRecord = await this.getMemberWithMember(member);
-    return prisma.guildMembersTable.update({
-      where: { uniqueId: `${member.guild.id} - ${member.id}` },
-      data: {
-        strikes: existingRecord.strikes - strikeValue,
-        lifetimeStrikes: existingRecord.lifetimeStrikes - strikeValue,
-      },
-    });
-  }
-
-  static async updateMemberUsername(member: GuildMember) {
-    Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
-    return prisma.guildMembersTable.update({
-      where: { uniqueId: `${member.guild.id} - ${member.id}` },
-      data: {
-        username: member.user.username,
       },
     });
   }
@@ -160,20 +175,6 @@ export class MemberTableServices {
     });
   }
 
-  static async deleteMemberWithMember(member: GuildMember) {
-    Logger.info(`Deleting member with ID: ${member.id} for server: ${member.guild.name}`);
-    return prisma.guildMembersTable.delete({
-      where: { uniqueId: `${member.guild.id} - ${member.id}` },
-    });
-  }
-
-  static async deleteMemberWithServerIdAndDisplayName(serverId: string, displayName: string) {
-    Logger.info(`Deleting member with displayName: ${displayName} for server: ${serverId}`);
-    return prisma.guildMembersTable.deleteMany({
-      where: { serverId, name: displayName },
-    });
-  }
-
   static async getMemberWithMember(member: GuildMember) {
     Logger.info(`Fetching member with name: ${member.displayName} for server: ${member.guild.name}`);
     return prisma.guildMembersTable.findUnique({
@@ -191,29 +192,6 @@ export class MemberTableServices {
     });
   }
 
-  static async getAllGuildStrikesByInteraction(interaction: CommandInteraction) {
-    Logger.info(`Fetching all members in server: ID: ${interaction.guild?.id} for server: ${interaction.guild?.name}`);
-    return prisma.guildMembersTable.findMany({
-      where: { serverId: interaction.guild?.id },
-      select: {
-        name: true,
-        strikes: true,
-        lifetimeStrikes: true,
-      },
-    });
-  }
-
-  static async getAllMembersByServerId(serverId: string) {
-    Logger.info(`Fetching all members in server: ID: ${serverId}`);
-    return prisma.guildMembersTable.findMany({
-      where: { serverId },
-      select: {
-        name: true,
-        username: true,
-      },
-    });
-  }
-
   static async getAllMembersDataByServerId(serverId: string) {
     Logger.info(`Fetching all members in server: ID: ${serverId}`);
     return prisma.guildMembersTable.findMany({
@@ -224,13 +202,28 @@ export class MemberTableServices {
     });
   }
 
-  static async getAllMembersDisplayNamesByServerId(serverId: string, username) {
-    Logger.info(`Fetching all members in server: ID: ${serverId}`);
-    return prisma.guildMembersTable.findFirst({
-      where: { serverId, username },
-      select: {
-        name: true,
+  static async strikeResetUpdate(uniqueId: string, newStrikes: number) {
+    await prisma.guildMembersTable.update({
+      where: { uniqueId },
+      data: {
+        strikes: newStrikes,
       },
     });
+  }
+
+  static async removeAllStrikesUpdate(member: GuildMembersTable, totalStrikesToRemove: number) {
+    await prisma.guildMembersTable.update({
+      where: { uniqueId: member.uniqueId },
+      data: {
+        strikes: member.strikes - totalStrikesToRemove,
+        lifetimeStrikes: member.lifetimeStrikes - totalStrikesToRemove,
+      },
+    });
+  }
+
+  static async getMembersWithLessThanTicketLimit(server: ServerWithRelations) {
+    const memberTickets = await Comlink.getGuildTickets(server.guildId);
+    const result = memberTickets.filter((member) => member.tickets < 600);
+    return result;
   }
 }

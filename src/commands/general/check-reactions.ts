@@ -2,6 +2,7 @@ import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
 import { getReactions } from '../../methods/get-reactions';
 import { ApplicationCommandOptionType } from 'discord.js';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 
 export default new Command({
   name: 'checkreactions',
@@ -27,13 +28,20 @@ export default new Command({
     },
   ],
 
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server: ServerWithRelations) => {
     try {
-      Logger.info('Beginning see reactions Command');
+      Logger.info(`Beginning see reactions Command for server: ${server.serverId}`);
       const result = await getReactions(interaction);
-      return result;
+      return {
+        title: 'Check Reactions',
+        fields: [{ name: 'Message', value: result }],
+      };
     } catch (error) {
       Logger.error(`Error: ${error}`);
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occured whilst checking reactions' }],
+      };
     }
   },
 });

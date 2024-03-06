@@ -2,10 +2,10 @@ import { CommandInteraction, GuildMember, InteractionType, TextChannel } from 'd
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
-import { ChannelTableService } from '../database/services/channel-services';
 import { StrikeValuesTableService } from '../database/services/strike-values-services';
+import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
-export const removeStrikeFromMember = async (interaction: CommandInteraction) => {
+export const removeStrikeFromMember = async (interaction: CommandInteraction, server: ServerWithRelations) => {
   if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
     Logger.info('Interaction is not an Application Command');
     return undefined;
@@ -13,8 +13,7 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
 
   try {
     Logger.info('Beginning Remove Strike Service');
-    const serverId = interaction.guildId!;
-    const { strikeChannelId, strikeChannelName } = await ChannelTableService.getChannelsByServerId(serverId);
+    const { strikeChannelId, strikeChannelName } = server.channels;
     if (!strikeChannelId || !strikeChannelName) {
       Logger.error(`Guild Data is missing ${strikeChannelId} or ${strikeChannelName}`);
       throw Error('Guild setup is incomplete.');
@@ -23,7 +22,7 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
     const strike = ':x:';
     let message = '';
 
-    Logger.info(`Server ID: ${serverId}`);
+    Logger.info(`Server ID: ${server.serverId}`);
 
     const member = interaction.options.getMember(`user`) as GuildMember;
     let strikeReason = interaction.options.getString(`strike`);
@@ -40,10 +39,7 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
 
     if (!strikeReasonExists) {
       Logger.error('The strike attempting to be removed does not exist.');
-      return {
-        message: 'The strike attempting to be removed does not exist.',
-        content: undefined,
-      };
+      return 'The strike attempting to be removed does not exist.';
     }
 
     const strikeReasonRecords = await StrikeReasonsServices.getManyStrikeReasonsByMemberWithinResetPeriod(
@@ -88,18 +84,12 @@ export const removeStrikeFromMember = async (interaction: CommandInteraction) =>
     if (strikeChannel) {
       await strikeChannel.send(message);
       Logger.info(`Strike message sent to strike channel with \n Name: ${strikeChannelName} \n ID: ${strikeChannelId}`);
-      return {
-        content: message,
-        message: 'Strikes removed successfully',
-      };
+      return 'Strikes removed successfully';
     } else {
       Logger.error(`Strike channel with ID ${strikeChannelId} does not exist.`);
     }
     Logger.info('Unkown error occured during remove-strikes');
-    return {
-      content: undefined,
-      message: 'Something Went wrong',
-    };
+    return 'Something Went wrong';
   } catch (error) {
     Logger.error(`Error in removeStrikeFromMember: ${error}`);
     await interaction.reply({

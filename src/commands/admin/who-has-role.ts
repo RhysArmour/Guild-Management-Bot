@@ -29,11 +29,15 @@ export default new Command({
 
       Logger.info('Check Roles Completed');
       return {
-        content: undefined,
-        message: reply,
+        title: 'Who has Role',
+        fields: [{ name: 'Message', value: reply }],
       };
     } catch (error) {
       Logger.error(`Error: ${error}`);
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occured whilst getting roles.' }],
+      };
     }
   },
 });

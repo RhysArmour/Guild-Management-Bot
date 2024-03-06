@@ -1,8 +1,8 @@
-import { ApplicationCommandOptionType, InteractionType, Role } from 'discord.js';
+import { ApplicationCommandOptionType, Role } from 'discord.js';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
 import { GuildSetup } from '../../methods/bot-setup';
-import { ServerTableService } from '../../database/services/server-services';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 
 export default new Command({
   name: 'setuproles',
@@ -28,20 +28,9 @@ export default new Command({
       required: true,
     },
   ],
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server: ServerWithRelations) => {
     try {
-      Logger.info('Bot Setup command executed');
-
-      if (!isValidInteraction(interaction)) {
-        Logger.info('Interaction is not an Application Command');
-        return undefined;
-      }
-
-      const serverRecord = await ServerTableService.getServerTableByServerId(interaction.guild.id);
-
-      if (!serverRecord) {
-        await ServerTableService.createServerTableEntryByInteraction(interaction);
-      }
+      Logger.info(`Bot Setup Roles command executed for server: ${server.serverId}`);
 
       Logger.info('Retrieving Guild Data from Interaction.');
 
@@ -49,24 +38,25 @@ export default new Command({
 
       Logger.info('Data Successfully Retrieved');
 
-      const setupData = await GuildSetup.setupGuildRoles(interaction, serverData);
+      await GuildSetup.setupGuildRoles(interaction, serverData);
 
       Logger.info('Guild data setup completed');
 
-      return {
-        content: setupData,
-        message: 'Role setup complete.',
+      const result = {
+        title: 'Setup Roles',
+        fields: [{ name: 'Message', value: 'Server Roles set successfully' }],
       };
+
+      return result;
     } catch (error) {
       Logger.error(`An error occurred in the Bot Setup command: ${error}`);
-      return 'An error occurred while setting up guild data. Please try again later.';
+      return {
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occured whilst setting up the bot. Please try again later.' }],
+      };
     }
   },
 });
-
-function isValidInteraction(interaction) {
-  return interaction.type === InteractionType.ApplicationCommand && interaction.isChatInputCommand();
-}
 
 function extractServerData(interaction) {
   return {

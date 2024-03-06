@@ -1,10 +1,11 @@
-import { CommandInteraction, InteractionType } from 'discord.js';
+import { ChatInputCommandInteraction, CommandInteraction, InteractionType } from 'discord.js';
 import { Logger } from '../logger';
 import { IGuildChannels, IGuildRoles, IGuildLimits, IGuildServer } from '../interfaces/methods/bot-setup';
 import { ChannelTableService } from '../database/services/channel-services';
 import { RoleTableService } from '../database/services/role-services';
 import { LimitsTableService } from '../database/services/limits-services';
 import { ServerTableService } from '../database/services/server-services';
+import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
 export class GuildSetup {
   private static logAndThrowError(message: string, error: Error): void {
@@ -82,21 +83,23 @@ export class GuildSetup {
     }
   }
 
-  static async setupGuildServer(interaction: CommandInteraction, serverData: IGuildServer) {
-    if (!GuildSetup.isApplicationCommand(interaction)) {
-      return 'Cannot complete setup. Interaction is not an Application Command';
-    }
-
+  static async setupGuildServer(
+    interaction: ChatInputCommandInteraction,
+    serverData: IGuildServer,
+    server: ServerWithRelations,
+  ) {
     try {
       Logger.info('Setting up guild server');
-      const existingRecord = await ServerTableService.getServerTableByServerId(interaction.guildId);
+      const existingRecord = server;
 
       if (existingRecord) {
         Logger.info('Record exists. Updating with new values.');
-        await ServerTableService.updateServerTableEntryByInteraction(interaction, serverData);
+        await ServerTableService.updateServerTable(interaction, serverData);
+        return `Server: ${server.serverName} is already registered to ${server.guildName}. Updated Server details.`;
       } else {
         Logger.info('No Existing Record. Creating Entry');
-        await ServerTableService.createServerTableEntryByInteractionWithData(interaction, serverData);
+        const newServer = await ServerTableService.createServerTableEntryByInteractionWithData(interaction, serverData);
+        return `Server: ${newServer.serverName} has been registered to ${newServer.guildName}.`;
       }
     } catch (error) {
       GuildSetup.logAndThrowError(`Error during guild limits setup`, error);

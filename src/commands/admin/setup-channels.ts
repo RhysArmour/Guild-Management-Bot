@@ -1,8 +1,8 @@
-import { ApplicationCommandOptionType, InteractionType, TextChannel } from 'discord.js';
+import { ApplicationCommandOptionType, TextChannel } from 'discord.js';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
 import { GuildSetup } from '../../methods/bot-setup';
-import { ServerTableService } from '../../database/services/server-services';
+import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 
 export default new Command({
   name: 'setupchannels',
@@ -28,22 +28,9 @@ export default new Command({
       required: true,
     },
   ],
-  execute: async ({ interaction }) => {
+  execute: async ({ interaction }, server: ServerWithRelations) => {
     try {
-      Logger.info('Bot Setup command executed');
-
-      if (!isValidInteraction(interaction)) {
-        Logger.info('Interaction is not an Application Command');
-        return undefined;
-      }
-
-      const serverRecord = await ServerTableService.getServerTableByServerId(interaction.guild.id);
-
-      if (!serverRecord) {
-        await ServerTableService.createServerTableEntryByInteraction(interaction);
-      }
-
-      Logger.info('Retrieving Guild Data from Interaction.');
+      Logger.info(`Bot Setup command executed for server: ${server.serverId}`);
 
       const [ticketChannel, strikeChannel, strikeLimitChannel] = retrieveChannelOptions(interaction);
 
@@ -51,27 +38,25 @@ export default new Command({
 
       Logger.info('Data Successfully Retrieved');
 
-      const setupData = await GuildSetup.setupGuildChannels(interaction, serverData);
+      await GuildSetup.setupGuildChannels(interaction, serverData);
 
       Logger.info('Guild data setup completed');
 
-      return {
-        message: 'Guild Channels set successfully',
-        content: setupData,
+      const result = {
+        title: 'Setup Channels',
+        fields: [{ name: 'Message', value: 'Server Channels set successfully' }],
       };
+
+      return result
     } catch (error) {
       Logger.error(`An error occurred in the Bot Setup command: ${error}`);
       return {
-        message: 'An error occurred while setting up guild data. Please try again later.',
-        content: error,
+        title: 'Error',
+        fields: [{ name: 'Message', value: 'An issue occured whilst setting up the bot. Please try again later.' }],
       };
     }
   },
 });
-
-function isValidInteraction(interaction) {
-  return interaction.type === InteractionType.ApplicationCommand && interaction.isChatInputCommand();
-}
 
 function retrieveChannelOptions(interaction) {
   return [
