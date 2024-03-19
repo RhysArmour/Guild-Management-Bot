@@ -23,34 +23,32 @@ export const sortRole = async (oldMember: GuildMember, newMember: GuildMember, s
       Logger.info(`Checking new member: ${newMember.displayName} exists in Database.`);
       const checkMemberRecord = await MemberTableServices.getMemberWithMember(oldMember);
 
-      if (checkMemberRecord) {
-        Logger.info('Member exists in Database. No action needed');
-      } else {
+      if (!checkMemberRecord) {
         Logger.info(`Member does not exist in Database. Skipping Updates.`);
         return;
       }
+    }
 
-      // Absent role updated
-      if (
-        (!oldMember.roles.cache.has(absenceRoleId) && newMember.roles.cache.has(absenceRoleId)) ||
-        (oldMember.roles.cache.has(absenceRoleId) && !newMember.roles.cache.has(absenceRoleId))
-      ) {
-        Logger.info('Members absence status has been updated');
-        Logger.info(`Checking new member: ${newMember.displayName} exists in Database.`);
-        const memberRecord = await MemberTableServices.getMemberWithMember(oldMember);
+    // Absent role updated
+    if (
+      (!oldMember.roles.cache.has(absenceRoleId) && newMember.roles.cache.has(absenceRoleId)) ||
+      (oldMember.roles.cache.has(absenceRoleId) && !newMember.roles.cache.has(absenceRoleId))
+    ) {
+      Logger.info('Members absence status has been updated');
+      Logger.info(`Checking new member: ${newMember.displayName} exists in Database.`);
+      const memberRecord = await MemberTableServices.getMemberWithMember(oldMember);
 
-        if (memberRecord) {
-          Logger.info('Member exists in Database. Updating Absence status');
-          await MemberTableServices.updateMembersAbsenceStatus(oldMember, newMember);
-          return;
-        }
+      if (memberRecord) {
+        Logger.info('Member exists in Database. Updating Absence status');
+        await MemberTableServices.updateMembersAbsenceStatus(oldMember, newMember);
         return;
       }
+      return;
+    }
 
-      // Strike Limit Role Updated
-      if (!oldMember.roles.cache.has(strikeLimitRoleId) && newMember.roles.cache.has(strikeLimitRoleId)) {
-        await strikeLimitReached(oldMember, server);
-      }
+    // Strike Limit Role Updated
+    if (!oldMember.roles.cache.has(strikeLimitRoleId) && newMember.roles.cache.has(strikeLimitRoleId)) {
+      await strikeLimitReached(oldMember, server);
     }
   } catch (error) {
     Logger.error(`Error while executing sort role: ${error}`);

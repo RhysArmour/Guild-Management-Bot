@@ -60,35 +60,38 @@ export class MemberTableServices {
     const serverId = member.guild.id;
     const { displayName: name } = member;
 
-    Logger.info(`Creating member with ID: ${member.id} for server: ${member.guild.name}`);
+    try {
+      Logger.info(`Updating member with ID: ${member.id} for server: ${member.guild.name}`);
 
-    const result = await prisma.guildMembersTable.update({
-      where: { playerId: playerData.playerId },
-      data: {
-        uniqueId: `${serverId} - ${member.id}`,
-        serverName: member.guild.name,
-        server: {
-          connectOrCreate: {
-            where: { serverId },
-            create: {
-              serverId,
-              serverName: member.guild.name,
-              createdDate: new Date().toISOString(),
-              updatedDate: new Date().toISOString(),
+      const result = await prisma.guildMembersTable.update({
+        where: { uniqueId: `${serverId} - ${member.id}` },
+        data: {
+          uniqueId: `${serverId} - ${member.id}`,
+          serverName: member.guild.name,
+          server: {
+            connectOrCreate: {
+              where: { serverId },
+              create: {
+                serverId,
+                serverName: member.guild.name,
+                createdDate: new Date().toISOString(),
+                updatedDate: new Date().toISOString(),
+              },
             },
           },
+          memberId: member.id,
+          name,
+          username: member.user.username,
+          allyCode,
+          playerId: playerData.playerId,
+          playerName: playerData.name,
+          updatedDate: new Date().toISOString(),
         },
-        memberId: member.id,
-        name,
-        username: member.user.username,
-        allyCode,
-        playerId: playerData.playerId,
-        playerName: playerData.name,
-        updatedDate: new Date().toISOString(),
-      },
-    });
-
-    return result;
+      });
+      return result;
+    } catch (error) {
+      Logger.error(error);
+    }
   }
 
   static async addMemberStrikesWithMember(member: GuildMember, strikeValue: number) {
@@ -223,7 +226,7 @@ export class MemberTableServices {
 
   static async getMembersWithLessThanTicketLimit(server: ServerWithRelations) {
     const memberTickets = await Comlink.getGuildTickets(server.guildId);
-    const result = memberTickets.filter((member) => member.tickets < 600);
+    const result = memberTickets.filter((member) => member.tickets < server.limits.ticketLimit);
     return result;
   }
 }

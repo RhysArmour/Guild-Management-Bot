@@ -14,9 +14,11 @@ client.start();
 client.on('ready', async () => {
   Logger.info('Bot is Ready');
   Logger.info('Setting up Cron Schedule.');
-  Cron('29 * * * *', async () => {
+  Cron('30 29 * * * *', async () => {
+    Logger.info('Running Ticket Checks');
     const date = new Date();
 
+    Logger.info('Checking for guilds with reset times.');
     const existingGuildsWithResetTime = await ServerTableService.getGuildResetTimes();
 
     if (existingGuildsWithResetTime?.length) {
@@ -44,6 +46,8 @@ client.on('ready', async () => {
           }
         }
       }
+    } else {
+      Logger.info('No guilds with a reset time at the current time');
     }
   });
 });

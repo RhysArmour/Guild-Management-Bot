@@ -20,7 +20,7 @@ export class ServerTableService {
   static async createServerTableEntryByInteractionWithData(interaction: CommandInteraction, serverData: IGuildServer) {
     try {
       const { playerData, guildData } = await this.getGameData(serverData.allyCode);
-      const guildResetTime = new Date(parseFloat(guildData.guild.nextChallengesRefresh) * 1000);
+      const guildResetTime = new Date(parseFloat(guildData.guild.nextChallengesRefresh) * 1000).toISOString();
       const newServer = await prisma.serverTable.create({
         data: {
           createdDate: new Date().toISOString(),
@@ -46,14 +46,16 @@ export class ServerTableService {
 
   static async updateServerTable(interaction: ChatInputCommandInteraction, serverData: IGuildServer) {
     try {
-      const { guildData } = await this.getGameData(serverData.allyCode);
+      const { guildData, playerData } = await this.getGameData(serverData.allyCode);
       const dateInEpoch = Number(guildData.guild.nextChallengesRefresh) * 1000;
-      const guildResetTime = new Date(dateInEpoch);
+      const guildResetTime = new Date(dateInEpoch).toISOString();
 
       const updatedRecord = await prisma.serverTable.update({
         where: { serverId: interaction.guildId },
         data: {
           guildResetTime,
+          guildId: playerData.guildId,
+          guildName: playerData.guildName,
           ticketStrikesActive: serverData.ticketStrikesEnabled,
           updatedDate: new Date().toISOString(),
         },
@@ -66,14 +68,10 @@ export class ServerTableService {
 
   static async updateServerTableGuildResetTime(server: ServerWithRelations) {
     try {
-      const date = new Date(server.guildResetTime);
-      date.setHours(date.getHours() + Math.round(date.getMinutes() / 60));
-      date.setMinutes(30, 0, 0);
-      const newGuildReset = new Date(date.setDate(server.guildResetTime.getDate() + 1));
       const updatedRecord = await prisma.serverTable.update({
         where: { serverId: server.serverId },
         data: {
-          guildResetTime: newGuildReset,
+          guildResetTime: new Date(server.guildResetTime).toISOString(),
           updatedDate: new Date().toISOString(),
         },
       });
@@ -133,9 +131,9 @@ export class ServerTableService {
       const date = new Date();
       date.setHours(date.getHours() + Math.round(date.getMinutes() / 60));
       date.setMinutes(30, 0, 0);
+      const result = [];
 
       const serverRecord = await prisma.serverTable.findMany({
-        where: { guildResetTime: date },
         include: {
           channels: true,
           guildStrikes: true,
@@ -145,9 +143,23 @@ export class ServerTableService {
         },
       });
 
-      if (serverRecord.length) {
+      for (const server of serverRecord) {
+        if (!server.guildResetTime) {
+          continue;
+        }
+        if (server.guildResetTime.getTime() < date.getTime()) {
+          const guildData = await Comlink.getGuildInfoByGuildId(server.guildId);
+          server.guildResetTime = new Date(parseFloat(guildData.guild.nextChallengesRefresh) * 1000);
+          this.updateServerTableGuildResetTime(server);
+        }
+        if (server.guildResetTime && server.guildResetTime.getTime() === date.getTime()) {
+          result.push(server);
+        }
+      }
+
+      if (result.length) {
         Logger.info(`Existing Reset Time`);
-        return serverRecord;
+        return result;
       }
 
       return;
