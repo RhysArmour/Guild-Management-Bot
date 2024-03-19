@@ -6,7 +6,7 @@ const rest = new REST().setToken(config.token);
 
 // for guild-based commands
 rest
-  .put(Routes.applicationGuildCommands(config.clientId, config.guildId), { body: [] })
+  .put(Routes.applicationGuildCommands(config.clientId, process.env.guildId), { body: [] })
   .then(() => Logger.info('Successfully deleted all guild commands.'))
   .catch(console.error);
 

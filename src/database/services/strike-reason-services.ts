@@ -198,9 +198,9 @@ export class StrikeReasonsServices {
 
       if (entry.reason in reasonValues) {
         reasonList =
-          reasonList + ` ${j}. ${date}: ${entry.reason} - ${strike.repeat(reasonValues[`${entry.reason}`])}\n`;
+          reasonList + `${j}. ${date}: ${entry.reason} - ${strike.repeat(reasonValues[`${entry.reason}`])}\n`;
       } else {
-        reasonList = reasonList + ` ${j}. ${date}: ${entry.reason} - :x:\n`;
+        reasonList = reasonList + `${j}. ${date}: ${entry.reason} - :x:\n`;
       }
     });
     return reasonList;

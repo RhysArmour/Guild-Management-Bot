@@ -10,7 +10,7 @@ interface requestData {
 }
 
 export class Comlink {
-  static baseUrl = 'http://localhost:3000/';
+  static baseUrl = 'http://comlink.fly.dev/';
   private static async sortRequestConfig(data: requestData) {
     let payloadData;
     let config;
