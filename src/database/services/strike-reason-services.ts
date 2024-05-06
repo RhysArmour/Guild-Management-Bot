@@ -2,7 +2,6 @@ import { Logger } from '../../logger';
 import prisma from '../../classes/PrismaClient';
 import { GuildMember } from 'discord.js';
 import { GuildStrikeValues, MemberStrikeReasons, Prisma } from '@prisma/client';
-import { getLastMonthFullDate } from '../../utils/helpers/get-date';
 import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 import { ServerTableService } from './server-services';
 
@@ -102,33 +101,6 @@ export class StrikeReasonsServices {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static async strikeReasonsReset(serverId: string, startOfPreviousMonthDate: any, endOfPreviousMonthDate: any) {
-    try {
-      Logger.info('Starting deleteManyStrikeReasonEntriesByServerId method');
-      const lastMonth = getLastMonthFullDate();
-
-      await prisma.memberStrikeReasons.deleteMany({
-        where: {
-          serverId,
-          date: {
-            lte: endOfPreviousMonthDate,
-            gte: startOfPreviousMonthDate,
-          },
-        },
-      });
-
-      Logger.info(
-        `Deleted all strike reason entries for server Id: ${serverId} for ${lastMonth.toLocaleString('default', {
-          month: 'long',
-        })}`,
-      );
-    } catch (error) {
-      Logger.error(`Error deleting all strike reason entries: ${error}`);
-      throw Error('Failed to delete all strike reason entries');
-    }
-  }
-
   static async getManyStrikeReasonsByMemberWithinResetPeriod(member: GuildMember, reason: string) {
     try {
       Logger.info('Starting getManyStrikeReasonsByMemberWithinResetPeriod method');
@@ -204,5 +176,21 @@ export class StrikeReasonsServices {
       }
     });
     return reasonList;
+  }
+
+  static async getLastMonthStrikes(guildId: string, startOfPreviousMonthDate: Date, endOfPreviousMonthDate: Date) {
+    Logger.info(`Starting getLastMonthStrikes`)
+    return await prisma.memberStrikeReasons.findMany({
+      where: {
+        serverId: guildId,
+        date: {
+          lte: endOfPreviousMonthDate,
+          gte: startOfPreviousMonthDate,
+        },
+      },
+      include: {
+        member: true,
+      },
+    });
   }
 }

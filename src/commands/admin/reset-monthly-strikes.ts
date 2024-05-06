@@ -9,9 +9,8 @@ export default new Command({
 
   execute: async ({ interaction }, server) => {
     try {
-      Logger.info(`Resetting monthly strikes for server: ${server.serverId}`);
-
-      await resetMonthlyStrikes(interaction);
+      Logger.info(`Resetting monthly strikes for server: ${interaction.guildId}`);
+      await resetMonthlyStrikes(server);
       Logger.info('Monthly strikes reset');
       return {
         title: 'Reset Monthly Strikes',

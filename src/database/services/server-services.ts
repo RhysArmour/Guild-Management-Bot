@@ -131,9 +131,9 @@ export class ServerTableService {
       const date = new Date();
       date.setHours(date.getHours() + Math.round(date.getMinutes() / 60));
       date.setMinutes(30, 0, 0);
-      const result = [];
+      const result: ServerWithRelations[] = [];
 
-      const serverRecord = await prisma.serverTable.findMany({
+      const serverRecord: ServerWithRelations[] = await prisma.serverTable.findMany({
         include: {
           channels: true,
           guildStrikes: true,
@@ -162,7 +162,7 @@ export class ServerTableService {
         return result;
       }
 
-      return;
+      return result;
     } catch (error) {
       Logger.error(`Error getting server entry: ${error}`);
       return;
@@ -191,17 +191,20 @@ export class ServerTableService {
     }
   }
 
-  static async updateLastStrikeResetEntryByServerId(serverId: string) {
+  static async updateLastStrikeResetEntry(server: ServerWithRelations) {
     try {
+      Logger.info(`Updating last strike reset entry for server: ${server.serverId} - ${server.serverName}`);
       const date = new Date();
       let lastStrikeReset: Date;
       if (date.getMonth() === 0) {
+        Logger.info(`Last strike reset was November, setting last strike reset to December`);
         lastStrikeReset = new Date(date.getFullYear() - 1, date.getMonth() + 11, 1);
       } else {
         lastStrikeReset = new Date(date.getFullYear(), date.getMonth() - 1, 1);
       }
+      Logger.info(`Updating database to set last strike reset to: ${lastStrikeReset}`);
       await prisma.serverTable.update({
-        where: { serverId },
+        where: { serverId: server.serverId },
         data: {
           lastStrikeReset,
         },

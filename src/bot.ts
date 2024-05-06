@@ -28,8 +28,8 @@ client.on('ready', async () => {
           date.getDate() === 1 &&
           (!server.lastStrikeReset || date.getMonth() - server.lastStrikeReset.getMonth() <= 1)
         ) {
-          Logger.info('Day equals 1 and last strike reset took place last month. Starting resetMonthlyStrikes');
-          await resetMonthlyStrikes(server.serverId);
+          Logger.info('1st of the month and last strike reset took place last month. Starting resetMonthlyStrikes');
+          await resetMonthlyStrikes(server);
         }
 
         if (server.ticketStrikesActive === true) {

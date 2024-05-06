@@ -205,11 +205,12 @@ export class MemberTableServices {
     });
   }
 
-  static async strikeResetUpdate(uniqueId: string, newStrikes: number) {
-    await prisma.guildMembersTable.update({
-      where: { uniqueId },
+  static async resetAllGuildStrikes(server: ServerWithRelations) {
+    Logger.info(`Updating all strikes to 0 for server: ${server.serverId} - ${server.serverName}`)
+    await prisma.guildMembersTable.updateMany({
+      where: { serverId: server.serverId },
       data: {
-        strikes: newStrikes,
+        strikes: 0,
       },
     });
   }
