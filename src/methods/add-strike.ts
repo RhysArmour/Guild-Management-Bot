@@ -1,10 +1,10 @@
-import { CommandInteraction, GuildMember, InteractionType, TextChannel } from 'discord.js';
+import { ChatInputCommandInteraction, GuildMember, InteractionType, TextChannel } from 'discord.js';
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
-export const addStrike = async (interaction: CommandInteraction, server: ServerWithRelations) => {
+export const addStrike = async (interaction: ChatInputCommandInteraction, server: ServerWithRelations) => {
   try {
     if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
       Logger.info('Interaction is not an Application Command');

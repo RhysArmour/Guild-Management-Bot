@@ -1,4 +1,3 @@
-import { ChatInputCommandInteraction } from 'discord.js';
 import { Logger } from '../logger';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 import { Comlink } from '../classes/Comlink';
@@ -9,7 +8,6 @@ interface PlayerInfo {
 }
 
 export const getMembersWhoAreUnregistered = async (
-  interaction: ChatInputCommandInteraction,
   server: ServerWithRelations,
 ) => {
   try {

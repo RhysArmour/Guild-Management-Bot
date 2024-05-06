@@ -1,4 +1,4 @@
-import { CommandInteraction, GuildMember } from 'discord.js';
+import { ChatInputCommandInteraction, GuildMember } from 'discord.js';
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { currentDate } from '../utils/helpers/get-date';
@@ -6,7 +6,7 @@ import { StrikeReasonsServices } from '../database/services/strike-reason-servic
 import { StrikeValuesTableService } from '../database/services/strike-values-services';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
-export const checkStrikes = async (interaction: CommandInteraction, server: ServerWithRelations) => {
+export const checkStrikes = async (interaction: ChatInputCommandInteraction, server: ServerWithRelations) => {
   try {
     Logger.info('Beginning check Strikes.');
     const { currentMonth } = currentDate('long');
