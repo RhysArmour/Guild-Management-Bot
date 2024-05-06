@@ -8,8 +8,8 @@ export default new Command({
 
   execute: async ({ interaction }, server) => {
     try {
-      Logger.info('Beginning Check for unregistered Members');
-      const members = await getMembersWhoAreUnregistered(interaction, server);
+      Logger.info(`Beginning Check for unregistered Members for server: ${interaction.guildId}`);
+      const members = await getMembersWhoAreUnregistered(server);
       Logger.info('Member Registration Completed');
       const result = {
         title: 'Unregistered Member',
