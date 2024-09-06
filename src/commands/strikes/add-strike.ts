@@ -83,12 +83,11 @@ export default new Command({
   execute: async ({ interaction }) => {
     try {
       Logger.info('Add Strikes command executed');
-      // if (interaction.options._hoistedOptions.length % 2 !== 0) {
-      //   return {
-      //     message: 'You must select a user and the reason for the strike.',
-      //     content: undefined,
-      //   };
-      // }
+
+      if (!interaction.guildId) {
+        throw new Error();
+      }
+
       const server = await ServerTableService.getServerTableByServerId(interaction.guildId);
 
       if (!server) {

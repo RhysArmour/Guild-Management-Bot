@@ -23,7 +23,10 @@ export default new Event('interactionCreate', async (interaction) => {
       const server = await ServerTableService.getServerTableByServerId(interaction.guildId);
       if (command.name !== 'setupserver' && !server) {
         Logger.warn(`Server: ${interaction.guildId} has not been configured.`);
-        return 'Server has not been set up. Please set up the server using the command: /setupserver, /setuproles, /setuplimits and /setupchannels';
+        await interaction.followUp(
+          'Server has not been set up. Please set up the server using the command: \n- `/setupserver`\n- `/setuproles`\n- `/setuplimits`\n- `/setupchannels`',
+        );
+        return;
       }
       const result: APIEmbed = await command.execute(
         {
