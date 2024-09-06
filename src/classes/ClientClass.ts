@@ -72,17 +72,25 @@ export default class ExtendedClient extends Client {
       //Commands
       const slashCommands: ApplicationCommandDataResolvable[] = [];
       let commandFiles;
+      let eventFiles;
       if (process.env.NODE_ENV === 'dev') {
         commandFiles = await glob(`${__dirname}/../commands/*/*.ts`);
+        eventFiles = await glob(`${__dirname}/../events/*.ts`);
       } else {
         commandFiles = await glob(`${__dirname}/../commands/*/*.js`);
+        eventFiles = await glob(`${__dirname}/../events/*.js`);
       }
       commandFiles.forEach(async (filePath) => {
         const command = await this.importFile(filePath);
         if (!command.name) return;
-
         this.commands.set(command.name, command);
         slashCommands.push(command);
+      });
+
+      // Event
+      eventFiles.forEach(async (filePath) => {
+        const event: Event<keyof ClientEvents> = await this.importFile(filePath);
+        this.on(event.event, event.execute);
       });
 
       this.on('ready', () => {
@@ -90,13 +98,6 @@ export default class ExtendedClient extends Client {
           commands: slashCommands,
           guildId: process.env.guildId,
         });
-      });
-
-      // Event
-      const eventFiles = await glob(`${__dirname}/../events/*.js`);
-      eventFiles.forEach(async (filePath) => {
-        const event: Event<keyof ClientEvents> = await this.importFile(filePath);
-        this.on(event.event, event.execute);
       });
     } catch (error) {
       Logger.error('Error registering modules:', error);
