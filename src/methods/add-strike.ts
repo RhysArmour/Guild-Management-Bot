@@ -4,11 +4,14 @@ import { MemberTableServices } from '../database/services/member-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
-export const addStrike = async (interaction: ChatInputCommandInteraction, server: ServerWithRelations) => {
+export const addStrike = async (
+  interaction: ChatInputCommandInteraction,
+  server: ServerWithRelations,
+): Promise<string> => {
   try {
     if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
       Logger.info('Interaction is not an Application Command');
-      return undefined;
+      throw new Error();
     }
 
     Logger.info('Beginning Adding Strike');
@@ -22,7 +25,7 @@ export const addStrike = async (interaction: ChatInputCommandInteraction, server
           'Strike channel not found in the database. Please set up the server channels using the command /setupchannels',
         ephemeral: true,
       });
-      return;
+      throw new Error();
     }
 
     Logger.info(`Channels found for server: ${server.serverId}`);
