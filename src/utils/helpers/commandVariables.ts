@@ -2,6 +2,8 @@ import { AutocompleteInteraction } from 'discord.js';
 
 export const choices = [
   { name: 'Ticket Strike', value: 'Ticket Strike' },
+  { name: 'TB - Failed To Deploy Before Final Hour', value: 'TB - Failed To Deploy Before Final Hour' },
+  { name: 'TB - Never Hit Combat Mission Wave Target', value: 'TB - Never Hit Combat Mission Wave Target' },
   { name: 'TB - Phase 1 Offense', value: 'TB - Phase 1 Offense' },
   { name: 'TB - Phase 2 Offense', value: 'TB - Phase 2 Offense' },
   { name: 'TB - Phase 3 Offense', value: 'TB - Phase 3 Offense' },
@@ -10,7 +12,7 @@ export const choices = [
   { name: 'TB - Phase 6 Offense', value: 'TB - Phase 6 Offense' },
   { name: 'TB - Missed Special Mission', value: 'Missed Special Mission' },
   { name: 'TB - Failed Special Mission without Officer Aid', value: 'Failed Special Mission without Officer Aid' },
-  { name: 'TB - Failed to place assigned Ops', value: 'Failed to place assigned Ops' },
+  { name: 'TB - Failed To Place Assigned Ops', value: 'Failed To Place Assigned Ops' },
   { name: 'TW - Missed Signup', value: 'Missed Tw Signup' },
   { name: 'TW - Missed Defense Phase', value: 'Missed Tw Defense Phase' },
   { name: 'TW - Missed Offense Phase', value: 'Missed Tw Offense Phase' },
@@ -24,6 +26,8 @@ export const choices = [
 export const autocompleteChoices = [
   'Ticket Strike',
   'Failed Discord Check',
+  'TB - Failed To Deploy Before Final hour',
+  'TB - Never Hit Combat Mission Wave Target',
   'TB - Phase 1 Offense',
   'TB - Phase 2 Offense',
   'TB - Phase 3 Offense',
@@ -32,7 +36,7 @@ export const autocompleteChoices = [
   'TB - Phase 6 Offense',
   'TB - Missed Special Mission',
   'TB - Failed Special Mission without Officer Aid',
-  'TB - Failed to place assigned Ops',
+  'TB - Failed To Place Assigned Ops',
   'TB - Filled Ops that were not assigned',
   'TW - Missed Signup',
   'TW - Missed Defense Phase',

@@ -24,11 +24,7 @@ client.on('ready', async () => {
     if (existingGuildsWithResetTime?.length) {
       Logger.info(`${existingGuildsWithResetTime.length} guilds found for ticket run.`);
       for (const server of existingGuildsWithResetTime) {
-        if (
-          date.getDate() === 1 &&
-          (!server.lastStrikeReset || date.getMonth() - server.lastStrikeReset.getMonth() <= 1)
-        ) {
-          Logger.info('1st of the month and last strike reset took place last month. Starting resetMonthlyStrikes');
+        if (date.getDate() === 1) {
           await resetMonthlyStrikes(server);
         }
 
