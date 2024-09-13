@@ -14,6 +14,7 @@ export const choices = [
   { name: 'TB - Failed Special Mission without Officer Aid', value: 'Failed Special Mission without Officer Aid' },
   { name: 'TB - Failed To Place Assigned Ops', value: 'Failed To Place Assigned Ops' },
   { name: 'TW - Missed Signup', value: 'Missed Tw Signup' },
+  { name: 'TW - Missed Minimum Banners', value: 'Missed Minimum Banners' },
   { name: 'TW - Missed Defense Phase', value: 'Missed Tw Defense Phase' },
   { name: 'TW - Missed Offense Phase', value: 'Missed Tw Offense Phase' },
   {
@@ -39,6 +40,7 @@ export const autocompleteChoices = [
   'TB - Failed To Place Assigned Ops',
   'TB - Filled Ops that were not assigned',
   'TW - Missed Signup',
+  'TW - Missed Minimum Banners',
   'TW - Missed Defense Phase',
   'TW - Missed Offense Phase',
   'TW - Disobeying TW Orders',
