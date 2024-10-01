@@ -1,42 +1,32 @@
-import { ChatInputCommandInteraction, GuildMember, InteractionType, TextChannel } from 'discord.js';
+import { ChatInputCommandInteraction, GuildMember, TextChannel } from 'discord.js';
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
+import { validateInteractionType, validateServerChannels } from '../utils/validation';
 
 export const addStrike = async (
   interaction: ChatInputCommandInteraction,
   server: ServerWithRelations,
 ): Promise<string> => {
   try {
-    if (interaction.type !== InteractionType.ApplicationCommand || !interaction.isChatInputCommand()) {
-      Logger.info('Interaction is not an Application Command');
-      throw new Error();
-    }
-
     Logger.info('Beginning Adding Strike');
 
-    const { strikeChannelId, strikeChannelName } = server.channels;
+    // Validation
+    validateInteractionType(interaction);
+    const { strikeChannelId, strikeChannelName } = validateServerChannels(server);
 
-    if (!strikeChannelId || !strikeChannelName) {
-      Logger.error('Strike channel not found in the database.');
-      await interaction.reply({
-        content:
-          'Strike channel not found in the database. Please set up the server channels using the command /setupchannels',
-        ephemeral: true,
-      });
-      throw new Error();
-    }
+    Logger.info('Validation Complete, Setting Variables');
 
-    Logger.info(`Channels found for server: ${server.serverId}`);
-
+    // Setup Variables
     const strike = ':x:';
     let message = '';
-    const length = interaction.options.data.length;
+    console.log('HERE', interaction.options.data[0].options);
+    const length = interaction.options.data[0].options.length;
 
-    Logger.info(`Server ID: ${server.serverId}`);
-    Logger.info(`Strike Channel Name & ID: ${strikeChannelName}: ${strikeChannelId}`);
+    Logger.info('Variables Set, Starting Strike Loop');
 
+    // Assign strike Loop
     for (let i = 0; i < length / 2; i += 1) {
       const member = interaction.options.getMember(`user${i + 1}`) as GuildMember;
       const reason = (interaction.options.get(`reason${i + 1}`)?.value as string) ?? '';
@@ -54,19 +44,22 @@ export const addStrike = async (
       const result = await MemberTableServices.addMemberStrikesWithMember(member, strikeValue);
       await StrikeReasonsServices.createStrikeReasonByMember(member, reason);
 
-      message += `- ${strike} has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${
+      message += `- ${strike.repeat(strikeValue)} has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${
         result.strikes
       } strikes ${strike.repeat(result.strikes)}\n\n`;
     }
 
+    // Send Strike Message
     const strikeChannel = interaction.guild?.channels.cache.get(strikeChannelId!.toString()) as TextChannel;
-    if (strikeChannel) {
-      await strikeChannel.send(message);
-      Logger.info(`Strike message sent to strike channel with ID: ${strikeChannelName}`);
-      return message;
-    } else {
+
+    if (!strikeChannel) {
       Logger.error(`Strike channel with ID ${strikeChannelId} does not exist.`);
+      return message;
     }
+
+    await strikeChannel.send(message);
+    Logger.info(`Strike message sent to strike channel with ID: ${strikeChannelName}`);
+    return message;
   } catch (error) {
     Logger.error(`Error in 'addStrike': ${error}`);
     await interaction.reply({

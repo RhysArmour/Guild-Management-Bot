@@ -1,5 +1,3 @@
-import { IMember } from "./member-interface";
-
 export interface IMemberStrikeReasons {
   id: number;
   serverId: string;
@@ -7,5 +5,5 @@ export interface IMemberStrikeReasons {
   uniqueId: string;
   date: Date;
   reason: string;
-  member: IMember;
 }
+

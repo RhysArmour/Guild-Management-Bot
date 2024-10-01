@@ -8,6 +8,7 @@ import { Comlink } from '../../classes/Comlink';
 import { GuildMembersTable } from '@prisma/client';
 import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 import { PlayerData } from '../../interfaces/comlink/playerData';
+import { IMember } from '../../interfaces/database/member-interface';
 
 export class MemberTableServices {
   static async createMemberWithMember(
@@ -195,7 +196,7 @@ export class MemberTableServices {
     });
   }
 
-  static async getAllMembersDataByServerId(serverId: string) {
+  static async getAllMembersDataByServerId(serverId: string): Promise<IMember[]> {
     Logger.info(`Fetching all members in server: ID: ${serverId}`);
     return prisma.guildMembersTable.findMany({
       where: { serverId },
@@ -206,12 +207,15 @@ export class MemberTableServices {
   }
 
   static async resetAllGuildStrikes(server: ServerWithRelations) {
-    Logger.info(`Updating all strikes to 0 for server: ${server.serverId} - ${server.serverName}`)
+    Logger.info(`Updating all strikes to 0 for server: ${server.serverId} - ${server.serverName}`);
     await prisma.guildMembersTable.updateMany({
       where: { serverId: server.serverId },
       data: {
         strikes: 0,
       },
+    });
+    await prisma.memberStrikeReasons.deleteMany({
+      where: { serverId: server.serverId },
     });
   }
 
