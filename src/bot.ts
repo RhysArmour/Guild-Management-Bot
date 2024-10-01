@@ -24,7 +24,6 @@ client.on('ready', async () => {
     if (existingGuildsWithResetTime?.length) {
       Logger.info(`${existingGuildsWithResetTime.length} guilds found for ticket run.`);
       for (const server of existingGuildsWithResetTime) {
-        console.log(`Running ticket run for ${server.serverName}`);
         const discordGuild = await client.guilds.fetch(server.serverId);
         const strikeChannelId = server.channels.strikeChannelId;
         const strikeChannel = await discordGuild.channels.fetch(strikeChannelId);
