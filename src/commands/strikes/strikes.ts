@@ -209,7 +209,7 @@ export default new Command({
         }
       }
 
-      const result: APIEmbed = { title, fields: [{ name: 'Content', value: response }] };
+      const result: APIEmbed = { title, fields: [{ name: '', value: response }] };
 
       return result;
     } catch (error) {

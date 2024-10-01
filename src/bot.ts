@@ -5,7 +5,7 @@ import config from './config';
 import { ServerTableService } from './database/services/server-services';
 import { MemberTableServices } from './database/services/member-services';
 import { addTicketStrikes, ticketStrikeMessage } from './methods/ticket-strikes';
-import { resetMonthlyStrikes } from './methods/reset-monthly-strikes';
+import { monthlyStrikeSummary, resetMonthlyStrikes } from './methods/reset-monthly-strikes';
 
 export const client = new ExtendedClient();
 
@@ -24,14 +24,21 @@ client.on('ready', async () => {
     if (existingGuildsWithResetTime?.length) {
       Logger.info(`${existingGuildsWithResetTime.length} guilds found for ticket run.`);
       for (const server of existingGuildsWithResetTime) {
+        console.log(`Running ticket run for ${server.serverName}`);
+        const discordGuild = await client.guilds.fetch(server.serverId);
+        const strikeChannelId = server.channels.strikeChannelId;
+        const strikeChannel = await discordGuild.channels.fetch(strikeChannelId);
         if (date.getDate() === 1) {
+          const summary = await monthlyStrikeSummary(server);
+          if (strikeChannel.isTextBased()) {
+            strikeChannel.send({ embeds: [summary] });
+          }
           await resetMonthlyStrikes(server);
         }
 
         if (server.ticketStrikesActive === true) {
           Logger.info('Ticket strikes active. Starting to issue strikes.');
-          const discordGuild = await client.guilds.fetch(server.serverId);
-          const strikeChannelId = server.channels.strikeChannelId;
+          // const discordGuild = await client.guilds.fetch(server.serverId);
           const offenders = await MemberTableServices.getMembersWithLessThanTicketLimit(server);
           const ticketStrikes = await addTicketStrikes(offenders, server, discordGuild);
           await ServerTableService.updateServerTableGuildResetTime(server);
