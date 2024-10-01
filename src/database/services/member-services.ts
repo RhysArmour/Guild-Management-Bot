@@ -219,7 +219,7 @@ export class MemberTableServices {
     });
   }
 
-  static async removeAllStrikesUpdate(member: GuildMembersTable, totalStrikesToRemove: number) {
+  static async removeAllStrikesUpdate(member: IMember, totalStrikesToRemove: number) {
     await prisma.guildMembersTable.update({
       where: { uniqueId: member.uniqueId },
       data: {

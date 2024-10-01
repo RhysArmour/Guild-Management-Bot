@@ -28,8 +28,6 @@ export const monthlyStrikeSummary = async (server: ServerWithRelations): Promise
   const strikeValues = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(server.serverId);
   const members = await MemberTableServices.getAllMembersDataByServerId(server.serverId);
   for (const member of members) {
-    console.log('NAME:', member.name);
-    console.log(member.strikeReasons.toString());
     if (!member.strikes || member.strikes < 1) {
       continue;
     }
@@ -37,7 +35,6 @@ export const monthlyStrikeSummary = async (server: ServerWithRelations): Promise
     member.strikeReasons.forEach((strikeReason) => {
       const reason = strikeValues.find((strike) => strike.strikeReason === strikeReason.reason);
       if (reason) {
-        console.log(`<@${member.memberId}>`, reason);
         message += `\n   - ${reason.strikeReason}: ${':x:'.repeat(reason.value)}`;
       }
     });

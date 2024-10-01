@@ -21,7 +21,6 @@ export const addStrike = async (
     // Setup Variables
     const strike = ':x:';
     let message = '';
-    console.log('HERE', interaction.options.data[0].options);
     const length = interaction.options.data[0].options.length;
 
     Logger.info('Variables Set, Starting Strike Loop');
