@@ -6,8 +6,6 @@ import { Command } from '../../classes/Commands';
 import { ServerTableService } from '../../database/services/server-services';
 import { checkStrikes } from '../../methods/check-strike';
 import { removeStrikeFromMember } from '../../methods/remove-strikes';
-import { getStrikeValues } from '../../methods/get-strikes-values';
-import { setStrikeValues } from '../../methods/set-strike-values';
 
 export default new Command({
   name: 'strikes',
@@ -197,15 +195,6 @@ export default new Command({
         if (interaction.options.getSubcommand() === 'remove') {
           title = 'Removed Strikes';
           response = await removeStrikeFromMember(interaction, server);
-        }
-      } else {
-        if (interaction.options.getSubcommandGroup() === 'get') {
-          title = 'Strike Values';
-          response = await getStrikeValues(interaction, server);
-        }
-        if (interaction.options.getSubcommandGroup() === 'set') {
-          title = 'Strike Values';
-          response = await setStrikeValues(interaction, server);
         }
       }
 

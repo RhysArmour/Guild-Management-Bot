@@ -3,7 +3,6 @@ import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { currentDate } from '../utils/helpers/get-date';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
-import { StrikeValuesTableService } from '../database/services/strike-values-services';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
 export const checkStrikes = async (interaction: ChatInputCommandInteraction, server: ServerWithRelations) => {
@@ -33,9 +32,8 @@ export const checkStrikes = async (interaction: ChatInputCommandInteraction, ser
       const { strikes, lifetimeStrikes, strikeReasons } = await MemberTableServices.getAllStrikeReasonsByMember(member);
 
       const filteredReasons = await StrikeReasonsServices.filterStrikeByResetPeriod(strikeReasons, server);
-      const guildStrikeValuesRecord = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(serverId);
 
-      const reasonList = await StrikeReasonsServices.getReasonsList(filteredReasons, guildStrikeValuesRecord);
+      const reasonList = await StrikeReasonsServices.getReasonsList(filteredReasons);
       const strikesForMonthMessage = `- strikes for ${currentMonth}:\n ${reasonList}\n`;
 
       if (reasonList !== '') {

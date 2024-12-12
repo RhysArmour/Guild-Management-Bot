@@ -19,7 +19,6 @@ export const addStrike = async (
     Logger.info('Validation Complete, Setting Variables');
 
     // Setup Variables
-    const strike = ':x:';
     let message = '';
     const length = interaction.options.data[0].options.length;
 
@@ -36,16 +35,12 @@ export const addStrike = async (
 
       Logger.info(`Processing strike for User ID: ${id}, Username: ${displayName}, Reason: ${reason}`);
 
-      const strikeReason = server.guildStrikes.find((strike) => strike.strikeReason === reason);
-
-      const strikeValue = strikeReason ? strikeReason.value : 1;
-
-      const result = await MemberTableServices.addMemberStrikesWithMember(member, strikeValue);
+      const result = await MemberTableServices.addMemberStrikesWithMember(member, 1);
       await StrikeReasonsServices.createStrikeReasonByMember(member, reason);
 
-      message += `- ${strike.repeat(strikeValue)} has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${
+      message += `- :x: has been added to ${tag} - ${reason}.\n   - ${displayName} now has ${
         result.strikes
-      } strikes ${strike.repeat(result.strikes)}\n\n`;
+      } strikes ${':x:'.repeat(result.strikes)}\n\n`;
     }
 
     // Send Strike Message

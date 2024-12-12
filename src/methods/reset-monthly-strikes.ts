@@ -3,7 +3,6 @@ import { Logger } from '../logger';
 import { ServerTableService } from '../database/services/server-services';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 import { getLastMonthFullDate } from '../utils/helpers/get-date';
-import { StrikeValuesTableService } from '../database/services/strike-values-services';
 import { APIEmbed } from 'discord.js';
 
 export const resetMonthlyStrikes = async (server: ServerWithRelations) => {
@@ -25,7 +24,6 @@ export const monthlyStrikeSummary = async (server: ServerWithRelations): Promise
   // Retrieve strikes for previous month
 
   let message = '';
-  const strikeValues = await StrikeValuesTableService.getAllGuildStrikeValueObjectByServerId(server.serverId);
   const members = await MemberTableServices.getAllMembersDataByServerId(server.serverId);
   for (const member of members) {
     if (!member.strikes || member.strikes < 1) {
@@ -33,10 +31,7 @@ export const monthlyStrikeSummary = async (server: ServerWithRelations): Promise
     }
     message += `- ${member.name}: ${member.strikes} Strikes`;
     member.strikeReasons.forEach((strikeReason) => {
-      const reason = strikeValues.find((strike) => strike.strikeReason === strikeReason.reason);
-      if (reason) {
-        message += `\n   - ${reason.strikeReason}: ${':x:'.repeat(reason.value)}`;
-      }
+      message += `\n   - ${strikeReason.reason}: :x:}`;
     });
     message += `\n`;
   }

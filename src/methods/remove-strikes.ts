@@ -2,7 +2,6 @@ import { ChatInputCommandInteraction, GuildMember, InteractionType, TextChannel 
 import { Logger } from '../logger';
 import { MemberTableServices } from '../database/services/member-services';
 import { StrikeReasonsServices } from '../database/services/strike-reason-services';
-import { StrikeValuesTableService } from '../database/services/strike-values-services';
 import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 
 export const removeStrikeFromMember = async (interaction: ChatInputCommandInteraction, server: ServerWithRelations) => {
@@ -19,7 +18,6 @@ export const removeStrikeFromMember = async (interaction: ChatInputCommandIntera
       throw Error('Guild setup is incomplete.');
     }
     Logger.info('Database entry found');
-    const strike = ':x:';
     let message = '';
 
     Logger.info(`Server ID: ${server.serverId}`);
@@ -49,10 +47,8 @@ export const removeStrikeFromMember = async (interaction: ChatInputCommandIntera
 
     const { reason, uniqueId, date } = strikeReasonRecords[0];
 
-    const strikeValue = await StrikeValuesTableService.getIndividualStrikeValueByInteraction(interaction, reason);
-
     // TODO: RENAME updateMemberStrikesByGuildMember to SubtractMemberStrikesByMember and refactor accordingly
-    await MemberTableServices.updateMemberStrikesByGuildMember(member, strikeValue);
+    await MemberTableServices.updateMemberStrikesByGuildMember(member, 1);
     await StrikeReasonsServices.deleteStrikeReasonEntryByMember(member, { uniqueId, reason, date });
     const newRecord = await MemberTableServices.getAllStrikeReasonsByMember(member);
 
@@ -71,7 +67,7 @@ export const removeStrikeFromMember = async (interaction: ChatInputCommandIntera
 
     message += `- ${reason} has been removed from ${displayName} due to ${removalReason}\n - ${displayName} now has ${
       newRecord.strikes
-    } strikes ${strike.repeat(newRecord.strikes)}`;
+    } strikes ${':x:'.repeat(newRecord.strikes)}`;
 
     if (newStrikeReasons.length !== 0) {
       message = message + '\n\n' + currentStrikesMessage;

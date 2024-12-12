@@ -1,7 +1,7 @@
 import { Logger } from '../../logger';
 import prisma from '../../classes/PrismaClient';
 import { GuildMember } from 'discord.js';
-import { GuildStrikeValues, MemberStrikeReasons, Prisma } from '@prisma/client';
+import { MemberStrikeReasons, Prisma } from '@prisma/client';
 import { ServerWithRelations } from '../../interfaces/database/server-table-interface';
 import { ServerTableService } from './server-services';
 
@@ -154,32 +154,25 @@ export class StrikeReasonsServices {
     }
   }
 
-  static async getReasonsList(filteredReasons: MemberStrikeReasons[], guildStrikeValuesRecord: GuildStrikeValues[]) {
+  static async getReasonsList(filteredReasons: MemberStrikeReasons[]) {
     let reasonList = '';
-    const strike = ':x:';
-    const reasonValues = guildStrikeValuesRecord.reduce((result, record) => {
-      result[record.strikeReason] = record.value;
-      return result;
-    }, {});
 
     let j = 0;
     filteredReasons.forEach((entry) => {
       j++;
-      const strikeDate = new Date(entry.date);
-      const date = strikeDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const strikeDate = new Date(entry.date).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
 
-      if (entry.reason in reasonValues) {
-        reasonList =
-          reasonList + `${j}. ${date}: ${entry.reason} - ${strike.repeat(reasonValues[`${entry.reason}`])}\n`;
-      } else {
-        reasonList = reasonList + `${j}. ${date}: ${entry.reason} - :x:\n`;
-      }
+      reasonList = reasonList + `${j}. ${strikeDate}: ${entry.reason} - :x:\n`;
     });
     return reasonList;
   }
 
   static async getLastMonthStrikes(guildId: string, startOfPreviousMonthDate: Date, endOfPreviousMonthDate: Date) {
-    Logger.info(`Starting getLastMonthStrikes`)
+    Logger.info(`Starting getLastMonthStrikes`);
     return await prisma.memberStrikeReasons.findMany({
       where: {
         serverId: guildId,
