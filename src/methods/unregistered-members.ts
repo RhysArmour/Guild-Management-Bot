@@ -1,21 +1,19 @@
 import { Logger } from '../logger';
-import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 import { Comlink } from '../classes/Comlink';
+import { Server } from '../../db/models';
 
 interface PlayerInfo {
   playerId: string;
   playerName: string;
 }
 
-export const getMembersWhoAreUnregistered = async (
-  server: ServerWithRelations,
-) => {
+export const getMembersWhoAreUnregistered = async (server: Server) => {
   try {
     const playerIds: PlayerInfo[] = [];
     const registeredPlayerIds: string[] = [];
 
     Logger.info('Fetching Guild Info from Comlink');
-    const guildMembers = (await Comlink.getGuildInfoByGuildId(server.guildId)).guild.member;
+    const guildMembers = (await Comlink.getGuildDataByGuildId(server.guild.guildId)).guild.member;
 
     Logger.info('Sorting PlayerIds');
     for (const member of guildMembers) {
@@ -24,8 +22,10 @@ export const getMembersWhoAreUnregistered = async (
 
     Logger.info('Checking currently registered Members');
     for (const member of server.members) {
-      if (member.playerId) {
-        registeredPlayerIds.push(member.playerId);
+      for (const account of member.accounts) {
+        if (account.playerId) {
+          registeredPlayerIds.push(account.playerId);
+        }
       }
     }
 
@@ -46,4 +46,3 @@ export const getMembersWhoAreUnregistered = async (
     throw new Error('Failed to check unregistered members');
   }
 };
-

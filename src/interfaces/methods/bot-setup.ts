@@ -1,7 +1,7 @@
 import { Role, TextChannel } from 'discord.js';
 
 export interface IGuildChannels {
-  ticketChannel: TextChannel;
+  notificationChannel: TextChannel;
   strikeChannel: TextChannel;
   strikeLimitChannel: TextChannel;
 }
@@ -20,4 +20,5 @@ export interface IGuildLimits {
 export interface IGuildServer {
   allyCode: string;
   ticketStrikesEnabled: boolean;
+  strikeResetPeriod: string;
 }

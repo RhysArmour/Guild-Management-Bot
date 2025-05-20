@@ -1,16 +1,14 @@
-import { GuildMember } from 'discord.js';
+import { GuildMember, TextChannel } from 'discord.js';
 import { Logger } from '../logger';
-import { RoleTableService } from '../database/services/role-services';
-import { MemberTableServices } from '../database/services/member-services';
 import { strikeLimitReached } from './strike-limit';
-import { ServerWithRelations } from '../interfaces/database/server-table-interface';
+import { Server } from '../../db/models';
+import { RoleRepository } from '../database/repositories/roles-repository';
+import { MemberRepository } from '../database/repositories/member-repository';
 
-export const sortRole = async (oldMember: GuildMember, newMember: GuildMember, server: ServerWithRelations) => {
+export const sortRole = async (oldMember: GuildMember, newMember: GuildMember, server: Server) => {
   try {
     Logger.info(`Retrieving user info for: ${oldMember.displayName} from Database`);
-    const { guildRoleId, absenceRoleId, strikeLimitRoleId } = await RoleTableService.getRolesByServerId(
-      oldMember.guild.id,
-    );
+    const { guildRoleId, absenceRoleId, strikeLimitRoleId } = await new RoleRepository().getRoles(oldMember.guild.id);
 
     if (!guildRoleId || !absenceRoleId) {
       Logger.info('Bot has not been set up.');
@@ -21,10 +19,18 @@ export const sortRole = async (oldMember: GuildMember, newMember: GuildMember, s
     if (!oldMember.roles.cache.has(guildRoleId) && newMember.roles.cache.has(guildRoleId)) {
       Logger.info('New Member has been assigned guildId role');
       Logger.info(`Checking new member: ${newMember.displayName} exists in Database.`);
-      const checkMemberRecord = await MemberTableServices.getMemberWithMember(oldMember);
+      const checkMemberRecord = await new MemberRepository().findServerMember(server.serverId, oldMember.id);
 
       if (!checkMemberRecord) {
-        Logger.info(`Member does not exist in Database. Skipping Updates.`);
+        Logger.info(`Member does not exist in Database. Sending registration message.`);
+        const { notificationChannelId, notificationChannelName } = server.channels;
+        const notificationChannel = newMember.client.channels.cache.get(notificationChannelId) as TextChannel;
+        if (notificationChannel) {
+          const message = `New member ${newMember.displayName} has been assigned the guild role. Please register using the command \`/register allyCode:\`.`;
+          await notificationChannel.send(message);
+        } else {
+          Logger.error(`Notification channel ${notificationChannelName} not found or is not a text channel.`);
+        }
         return;
       }
     }
@@ -36,11 +42,12 @@ export const sortRole = async (oldMember: GuildMember, newMember: GuildMember, s
     ) {
       Logger.info('Members absence status has been updated');
       Logger.info(`Checking new member: ${newMember.displayName} exists in Database.`);
-      const memberRecord = await MemberTableServices.getMemberWithMember(oldMember);
+      const memberRecord = await new MemberRepository().findServerMember(server.serverId, oldMember.id);
 
       if (memberRecord) {
         Logger.info('Member exists in Database. Updating Absence status');
-        await MemberTableServices.updateMembersAbsenceStatus(oldMember, newMember);
+        const isAbsent = newMember.roles.cache.has(absenceRoleId);
+        await new MemberRepository().updateAbsenceStatus(memberRecord, isAbsent);
         return;
       }
       return;

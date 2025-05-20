@@ -1,6 +1,6 @@
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
-import { registerMembers } from '../../methods/register-members';
+import { register } from '../../methods/register';
 import { ApplicationCommandOptionType } from 'discord.js';
 
 export default new Command({
@@ -9,14 +9,26 @@ export default new Command({
   options: [
     {
       name: 'allycode',
-      description: 'The ally code of the member you want to register',
+      description: 'The ally code of the account you want to register',
       type: ApplicationCommandOptionType.String,
       required: true,
     },
     {
       name: 'member',
-      description: 'The Member you want to register',
+      description: 'The Member you want to register the account to',
       type: ApplicationCommandOptionType.User,
+      required: false,
+    },
+    {
+      name: 'altallycode',
+      description: 'The alternate account ally code of the account you want to register to the given member',
+      type: ApplicationCommandOptionType.String,
+      required: false,
+    },
+    {
+      name: 'secondaltallycode',
+      description: 'The second alternate account ally code of the account you want to register to the given member',
+      type: ApplicationCommandOptionType.String,
       required: false,
     },
   ],
@@ -24,11 +36,11 @@ export default new Command({
   execute: async ({ interaction }, server) => {
     try {
       Logger.info('Beginning Member Registration');
-      const register = await registerMembers(interaction, server);
+      const registeredUser = await register(interaction, server);
       Logger.info('Member Registration Completed');
       const result = {
         title: 'Register Member',
-        fields: [{ name: 'Message', value: register }],
+        fields: [{ name: 'Message', value: registeredUser }],
       };
 
       return result;

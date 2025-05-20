@@ -1,4 +1,3 @@
-import prisma from '../classes/PrismaClient';
 import { ApplicationCommandDataResolvable, Client, ClientEvents, Collection, GatewayIntentBits } from 'discord.js';
 import { CommandType } from '../interfaces/discord/Command';
 import config from '../config';
@@ -6,6 +5,7 @@ import { glob } from 'glob';
 import { Logger } from '../logger';
 import { RegisterCommandsOptions } from '../interfaces/discord/RegisterCommands';
 import { Event } from './Event';
+import { initializeDatabase } from '../../db/initalise-db';
 
 export default class ExtendedClient extends Client {
   commands: Collection<string, CommandType> = new Collection();
@@ -34,7 +34,7 @@ export default class ExtendedClient extends Client {
 
   async start() {
     try {
-      await prisma.$connect(); // Connect to the database
+      await initializeDatabase(); // Connect to the database
       Logger.info('Connected to Database');
       this.registerModules();
       this.login(config.token);

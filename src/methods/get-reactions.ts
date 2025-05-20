@@ -1,57 +1,57 @@
-import { ChatInputCommandInteraction, Collection, Message, Role, TextChannel, User } from 'discord.js';
+import { Collection, Message, Role, User } from 'discord.js';
 import { Logger } from '../logger';
 
-const fetchMessageReactions = async (interaction: ChatInputCommandInteraction) => {
+const fetchMessageReactions = async (message: Message): Promise<Collection<string, User>[]> => {
   try {
     Logger.info('Fetching message reactions');
     const reactedUsers: Collection<string, User>[] = [];
-    const messageId = interaction.options.getString('messageid');
-    const channel = interaction.options.getChannel('channel') as TextChannel;
-    const guildChannel = (await interaction.guild.channels.fetch(channel.id)) as TextChannel;
-    const message = (await guildChannel.messages.fetch({message: messageId, force: true})) as Message;
 
     const reactions = message.reactions.cache;
 
     for await (const reaction of reactions) {
-      const user = await reaction[1].users.fetch();
-      reactedUsers.push(user);
+      const users = await reaction[1].users.fetch();
+      reactedUsers.push(users);
     }
 
     return reactedUsers;
   } catch (error) {
-    Logger.error(error);
+    Logger.error('Error fetching message reactions:', error);
+    throw error;
   }
 };
 
-export const getReactions = async (interaction: ChatInputCommandInteraction) => {
+export const getReactions = async (message: Message, role: Role): Promise<string> => {
   try {
     Logger.info('Starting getReactions Method');
 
-    await interaction.guild.members.fetch();
+    // Fetch all members in the guild to ensure the cache is populated
+    await message.guild.members.fetch();
 
-    const role = interaction.options.getRole('role') as Role;
+    // Fetch reactions for the message
+    const users = await fetchMessageReactions(message);
 
-    const users = await fetchMessageReactions(interaction);
+    // Flatten the list of users who reacted and extract their IDs
+    const reactedUserIds: string[] = users.flatMap((userCollection) => userCollection.map((user) => user.id));
 
-    const usernames: string[] = users.flatMap((user) => user.map((user) => user.username));
-
-    if (usernames.length === 0) {
-      return 'There are currently no reactions on this message';
+    if (reactedUserIds.length === 0) {
+      return 'There are currently no reactions on this message.';
     }
 
-    const filteredReactions = Array.from(new Set(usernames));
+    // Filter members with the role who haven't reacted
+    const roleMemberIds = role.members.map((member) => member.id);
+    const nonReactedMemberIds = roleMemberIds.filter((memberId) => !reactedUserIds.includes(memberId));
 
-    const allMembers = role.members.map((member) => member.user.username);
+    if (nonReactedMemberIds.length === 0) {
+      return `All members with the ${role.name} role have reacted to the message.`;
+    }
 
-    const filteredMembers = allMembers.filter((member) => !filteredReactions.includes(member));
-
-    const formattedResponse = filteredMembers.map((name) => `- ${name}`).join('\n');
+    // Format the response with mentions of non-reacted members
+    const nonReactedMentions = nonReactedMemberIds.map((memberId) => `<@${memberId}>`).join('\n');
 
     Logger.info('Finished getReactions Method');
-    return `The following ${filteredMembers.length} have not reacted:\n${formattedResponse}`;
+    return `The following ${nonReactedMemberIds.length} members have not reacted to the linked message: ${message.url}:\n${nonReactedMentions}`;
   } catch (error) {
     Logger.error('Error in getReactions:', error);
     return 'An error occurred while processing reactions.';
   }
 };
-

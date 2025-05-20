@@ -15,4 +15,3 @@ export interface GuildMemberData {
   lifetimeSeasonScore: string;
   leagueId: string;
 }
-

@@ -8,5 +8,7 @@
   "semi": true,
   "tabWidth": 2,
   "trailingComma": "all",
-  "arrowParens": "always"
+  "arrowParens": "always",
+  "importOrder": ["^node:", "^@?\\w", "^[./]"],
+  "importOrderSeparation": true
 }
