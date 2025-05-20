@@ -10,7 +10,7 @@ interface requestData {
 }
 
 export class Comlink {
-  static baseUrl = 'http://localhost:3000/';
+  static baseUrl = process.env.COMLINK_URL;
 
   /**
    * Prepare the request configuration for axios.
