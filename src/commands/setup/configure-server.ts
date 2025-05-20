@@ -1,10 +1,4 @@
-import {
-  ChatInputCommandInteraction,
-  APIActionRowComponent,
-  APIMessageActionRowComponent,
-  ApplicationCommandOptionType,
-  PermissionsBitField,
-} from 'discord.js';
+import { ChatInputCommandInteraction, ApplicationCommandOptionType, PermissionsBitField } from 'discord.js';
 import { Logger } from '../../logger';
 import { Command } from '../../classes/Commands';
 import { GuildSetup } from '../../methods/bot-setup';
@@ -65,7 +59,7 @@ export default new Command({
       await interaction.editReply({
         content: 'Please configure the server settings using the buttons below:',
         embeds: [embed],
-        components: components as unknown as APIActionRowComponent<APIMessageActionRowComponent>[],
+        components: components.map((component) => component.toJSON()),
         flags: 64 as number, // Ephemeral flag
       });
     } catch (error) {
