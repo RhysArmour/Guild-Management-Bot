@@ -1,7 +1,7 @@
-// import { ServerWithRelations } from '../interfaces/database/server-table-interface';
+// import { Server } from '../interfaces/database/server-table-interface';
 // import { Logger } from '../logger';
 
-// export const setStrikeValues = async (interaction, server: ServerWithRelations): Promise<string> => {
+// export const setStrikeValues = async (interaction, server: Server): Promise<string> => {
 //   try {
 //     Logger.info('Set Strike value command executed');
 //     const strikeReason = interaction.options.getString('strike') as string;
@@ -25,4 +25,3 @@
 //     });
 //   }
 // };
-

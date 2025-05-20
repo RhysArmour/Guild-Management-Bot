@@ -11,22 +11,23 @@ datasource db {
 }
 
 model ServerTable {
-  serverId            String              @id @unique
+  serverId            String                @id @unique
   serverName          String
   guildId             String?
   guildName           String?
-  strikeResetPeriod   Int                 @default(1)
+  strikeResetPeriod   String? // Stores ISO 8601 duration (e.g., "P3W")
   lastStrikeReset     DateTime?
   triggerPhrase       String?
   guildResetTime      DateTime?
-  ticketStrikesActive Boolean?            @default(true)
+  ticketStrikesActive Boolean?              @default(true)
   createdDate         DateTime
   updatedDate         DateTime
   members             GuildMembersTable[]
   channels            GuildChannelsTable?
-  guildStrikes        GuildStrikeValues[]
   limits              GuildLimitsTable?
   roles               GuildRolesTable?
+  GuildStrikeValues   GuildStrikeValues[]
+  MemberStrikeReasons MemberStrikeReasons[]
 }
 
 model GuildChannelsTable {
@@ -64,25 +65,12 @@ model GuildRolesTable {
   server              ServerTable @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
 }
 
-model GuildStrikeValues {
-  serverId     String
-  uniqueId     String      @unique
-  strikeReason String
-  value        Int
-  createdDate  DateTime
-  updatedDate  DateTime
-  server       ServerTable @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
-}
-
 model GuildMembersTable {
-  uniqueId                String                @id
-  serverId                String
-  serverName              String
-  memberId                String
+  memberId                String                @id
   name                    String
   allyCode                String?
   playerName              String?
-  playerId                String?               @unique
+  playerId                String?
   username                String?
   strikes                 Int                   @default(0)
   strikeReasons           MemberStrikeReasons[]
@@ -93,8 +81,6 @@ model GuildMembersTable {
   createdDate             DateTime
   updatedDate             DateTime
   server                  ServerTable           @relation(fields: [serverId], references: [serverId], onDelete: Cascade)
-
-  @@index([uniqueId], name: "idx_uniqueId")
 }
 
 model MemberStrikeReasons {
@@ -103,8 +89,10 @@ model MemberStrikeReasons {
   name     String
   uniqueId String
   date     DateTime
+  active   Boolean
   reason   String
-  member   GuildMembersTable @relation(fields: [uniqueId], references: [uniqueId], onDelete: Cascade)
+  member   GuildMembersTable @relation(fields: [memberId], references: [uniqueId], onDelete: Cascade)
+  server   ServerTable       @relation(fields: [serverId], references: [serverId])
 
   @@unique([uniqueId, date, reason], name: "unique_reason")
 }

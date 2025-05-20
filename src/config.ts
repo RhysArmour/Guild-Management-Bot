@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const { token, clientId } = process.env;
 
-if (!clientId  || !token) {
+if (!clientId || !token) {
   throw new Error('Missing environment variable');
 }
 

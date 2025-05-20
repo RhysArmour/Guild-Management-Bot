@@ -7,8 +7,7 @@ import {
   PermissionResolvable,
 } from 'discord.js';
 import ExtendedClient from '../../classes/ClientClass';
-import { ServerWithRelations } from '../database/server-table-interface';
-
+import { Server } from '../../../db';
 export interface ExtendedInteraction extends ChatInputCommandInteraction {
   member: GuildMember;
 }
@@ -30,7 +29,7 @@ interface AutoCompleteOptions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExecuteFunction = (options: ExecuteOptions, server: ServerWithRelations) => any;
+type ExecuteFunction = (options: ExecuteOptions, server: Server) => any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AutoCompleteFunction = (options: AutoCompleteOptions) => any;
 

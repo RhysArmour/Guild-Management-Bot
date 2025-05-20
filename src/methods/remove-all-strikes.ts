@@ -1,10 +1,11 @@
 import { CommandInteraction } from 'discord.js';
 import { Logger } from '../logger';
-import { ServerWithRelations } from '../interfaces/database/server-table-interface';
-import { MemberTableServices } from '../database/services/member-services';
 import prisma from '../classes/PrismaClient';
+import { MemberRepository } from '../database/repositories/member-repository';
+import { StrikeRepository } from '../database/repositories/strikes-repository';
+import { Server } from '../../db';
 
-export const removeAllStrikes = async (interaction: CommandInteraction, server: ServerWithRelations) => {
+export const removeAllStrikes = async (interaction: CommandInteraction, server: Server) => {
   try {
     Logger.info('Removing All Strikes');
     try {
@@ -15,15 +16,15 @@ export const removeAllStrikes = async (interaction: CommandInteraction, server: 
         guildId = interaction;
       }
 
-      const guildMembers = await MemberTableServices.getAllMembersDataByServerId(server.serverId);
+      const guildMembers = await new MemberRepository().findAllServerMembers(server.serverId);
 
       for (const member of guildMembers) {
-        if (member.strikes > 0) {
-          Logger.info(`Strikes found for Member: ${member.name}`);
+        if (member.strikes.length > 0) {
+          Logger.info(`Strikes found for Member: ${member.displayName}`);
           let totalStrikesToRemove = 0;
 
           Logger.info('Looping through strike reasons');
-          for (const strike of member.strikeReasons) {
+          for (const strike of member.strikes) {
             const strikeValue = await prisma.guildStrikeValues.findFirst({
               where: { serverId: guildId, strikeReason: strike.reason },
             });
@@ -33,14 +34,16 @@ export const removeAllStrikes = async (interaction: CommandInteraction, server: 
             } else {
               totalStrikesToRemove += strikeValue.value;
             }
-            await prisma.memberStrikeReasons.delete({
-              where: { unique_reason: { uniqueId: strike.uniqueId, date: strike.date, reason: strike.reason } },
+            await new StrikeRepository().delete({
+              id: strike.id,
+              assignedDate: strike.assignedDate,
+              reason: strike.reason,
             });
           }
 
           Logger.info(`Removing ${totalStrikesToRemove} strikes`);
 
-          await MemberTableServices.removeAllStrikesUpdate(member, totalStrikesToRemove);
+          // await new MemberRepository().delete(member, totalStrikesToRemove);
         }
       }
 

@@ -1,13 +1,13 @@
 import { ChatInputCommandInteraction, InteractionType } from 'discord.js';
-import { ServerWithRelations } from '../interfaces/database/server-table-interface';
 import { Logger } from '../logger';
+import { Server } from '../../db/models';
 
 interface ChannelInformationInterface {
   strikeChannelName: string;
   strikeChannelId: string;
 }
 
-export const validateServerChannels = (server: ServerWithRelations): ChannelInformationInterface => {
+export const validateServerChannels = (server: Server): ChannelInformationInterface => {
   Logger.info('Validating Channels');
   const { strikeChannelId, strikeChannelName } = server.channels;
 
@@ -39,4 +39,3 @@ export const validateInteractionType = (interaction: ChatInputCommandInteraction
   Logger.info('Interaction Valid');
   return;
 };
-

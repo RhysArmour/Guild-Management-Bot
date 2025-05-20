@@ -1,4 +1,7 @@
 import { AutocompleteInteraction } from 'discord.js';
+import { AccountRepository } from '../../database/repositories/account-repository';
+import { Member } from '../../../db';
+import { Logger } from '../../logger';
 
 export const choices = [
   { name: 'Ticket Strike', value: 'Ticket Strike' },
@@ -59,3 +62,31 @@ export const strikeChoicesAutocomplete = async (interaction: AutocompleteInterac
 
   return await interaction.respond(filtered.map((choice) => ({ name: choice, value: choice })));
 };
+
+/**
+ * Fetches accounts associated with a server and formats them for autocomplete.
+ * @param serverId - The ID of the server.
+ * @returns An array of autocomplete options.
+ */
+export async function fetchAccountAutocompleteOptions(serverId: string) {
+  try {
+    Logger.info(`Fetching accounts associated with server ID: ${serverId}`);
+    const accounts = await new AccountRepository().findAllByServer(serverId, {
+      include: [{ model: Member, as: 'member' }],
+    });
+
+    Logger.info(`Found ${accounts.length} accounts. Formatting for autocomplete...`);
+
+    const accountOptions = accounts.map((account) => ({
+      name: `${account.member.displayName} (${account.displayName} - ${account.allyCode})`,
+      value: account.allyCode,
+    }));
+
+    Logger.info('Successfully formatted account options for autocomplete.');
+    return accountOptions;
+  } catch (error) {
+    Logger.error(`Error fetching account autocomplete options: ${error}`);
+    return [];
+  }
+}
+
