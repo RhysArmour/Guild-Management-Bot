@@ -1,4 +1,5 @@
 import { sequelize } from '../db';
+import { Comlink } from '../src/classes/Comlink';
 import { AccountRepository } from '../src/database/repositories/account-repository';
 import { ChannelRepository } from '../src/database/repositories/channels-repository';
 import { MemberRepository } from '../src/database/repositories/member-repository';
@@ -54,16 +55,23 @@ export const seedDatabase = async () => {
 };
 
 const seedServerTable = async () => {
-  await new ServerRepository().createServer('879052998792319007', {
-    createdAt: testCreationDate,
-    updatedAt: testCreationDate,
-    serverId: '879052998792319007',
-    serverName: 'Test Server',
-    strikeLimit: 3,
-    ticketLimit: 600,
-    ticketStrikesActive: true,
-    strikeCountMethod: 'member',
-  });
+  const guildData = await Comlink.getGuildDataByGuildId('5i2kDDxSQ2Oje1Ykk7Gk7w');
+  await new ServerRepository().createServer(
+    '879052998792319007',
+    {
+      createdAt: testCreationDate,
+      updatedAt: testCreationDate,
+      serverId: '879052998792319007',
+      serverName: 'Test Server',
+      strikeLimit: 3,
+      ticketLimit: 600,
+      ticketStrikesActive: true,
+      strikeCountMethod: 'member',
+    },
+    {
+      ...guildData,
+    },
+  );
 };
 
 const seedChannelsTable = async () => {
@@ -72,8 +80,8 @@ const seedChannelsTable = async () => {
     updatedAt: testCreationDate,
     strikeChannelId: '1075947970857545738',
     strikeChannelName: 'strike-room',
-    ticketChannelId: '1075947935302422568',
-    ticketChannelName: 'hotbot',
+    notificationChannelId: '1075947935302422568',
+    notificationChannelName: 'hotbot',
     strikeLimitChannelId: '1121814731381014671',
     strikeLimitChannelName: 'strike-limit-room',
     serverId: '879052998792319007',
