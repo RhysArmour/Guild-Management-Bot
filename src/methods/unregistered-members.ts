@@ -13,7 +13,9 @@ export const getMembersWhoAreUnregistered = async (server: Server) => {
     const registeredPlayerIds: string[] = [];
 
     Logger.info('Fetching Guild Info from Comlink');
-    const guildMembers = (await Comlink.getGuildDataByGuildId(server.guild.guildId)).guild.member;
+    const guildData = await Comlink.getGuildDataByGuildId(server.guild.guildId);
+
+    const guildMembers = guildData.guild.member;
 
     Logger.info('Sorting PlayerIds');
     for (const member of guildMembers) {
