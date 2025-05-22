@@ -61,8 +61,8 @@ export const register = async (interaction: ChatInputCommandInteraction, server:
 function extractInteractionData(interaction: ChatInputCommandInteraction) {
   Logger.info('Extracting ally codes from interaction...');
   const allyCode = interaction.options.getString('allycode');
-  const altOne = interaction.options.getString('alt');
-  const altTwo = interaction.options.getString('additionalalt');
+  const altOne = interaction.options.getString('altallycode');
+  const altTwo = interaction.options.getString('secondaltallycode');
   const allyCodes = [...new Set([allyCode, altOne, altTwo])]; // Deduplicate ally codes
 
   Logger.info('Extracting member from interaction...');

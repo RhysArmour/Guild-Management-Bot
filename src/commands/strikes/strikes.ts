@@ -135,7 +135,12 @@ export default new Command({
         }
 
         const accountOptions = await fetchAccountAutocompleteOptions(serverId);
-        return interaction.respond(accountOptions);
+
+        const focusedValue = interaction.options.getFocused();
+        const filtered = accountOptions.filter((option) =>
+          option.name.toLowerCase().includes(focusedValue.toLowerCase()),
+        );
+        return interaction.respond(filtered.slice(0, 25));
       }
       // Handle reason autocomplete (e.g., reason1, reason2, etc.)
       if (focusedOption.name.startsWith('reason')) {

@@ -39,6 +39,8 @@ export default new Event('interactionCreate', async (interaction) => {
         return;
       }
 
+      Logger.debug(`Server Data: ${server}`);
+
       // Execute the command and handle the result
       const result = await command.execute(
         {
