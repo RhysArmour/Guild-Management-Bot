@@ -170,7 +170,8 @@ export async function handleStrikeMenuInteraction(
     }
   }
 
-  const discordUser = interaction.guild.members.cache.find((member) => member.id === memberRecord.discordId);
+  const discordUser = await interaction.guild.members.fetch(memberRecord.discordId).catch(() => null);
+
   Logger.info({ discordUserFound: !!discordUser, discordUserId: memberRecord.discordId }, 'Discord user lookup');
 
   const sortedAccounts = memberRecord.accounts.sort((a, b) => {

@@ -178,7 +178,7 @@ export const generateRemoveStrikeEmbed = async (
       return a.alt ? 1 : -1; // If `alt` is true, it goes after `alt: false`
     });
 
-    const discordUser = menuInteraction.guild.members.cache.find((member) => member.id === memberRecord.discordId);
+    const discordUser = await menuInteraction.guild.members.fetch(memberRecord.discordId).catch(() => null);
 
     const embed = generateStrikeDetailsEmbed(
       memberRecord.server,
