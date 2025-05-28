@@ -21,10 +21,17 @@ export const choices = [
   { name: 'TW - Missed Defense Phase', value: 'Missed Tw Defense Phase' },
   { name: 'TW - Missed Offense Phase', value: 'Missed Tw Offense Phase' },
   {
+    name: 'TW - TW - Extremely late attacks during offense phase',
+    value: 'TW - Extremely late attacks during offense phase',
+  },
+  { name: 'TW - Severe inefficiency during offense phase', value: 'TW - Severe inefficiency during offense phase' },
+  {
     name: 'TW - Did not meet minimum rogue actions',
     value: 'TW - Did not meet minimum rogue actions',
   },
   { name: 'RAID - Missed Raid', value: 'RAID - Missed Raid' },
+
+  { name: 'RAID - Scored Below Minimum Expected Score', value: 'RAID - Scored Below Minimum Expected Score' },
 ];
 
 export const autocompleteChoices = [
@@ -48,7 +55,10 @@ export const autocompleteChoices = [
   'TW - Missed Offense Phase',
   'TW - Disobeying TW Orders',
   'TW - Did not meet minimum rogue actions',
+  'TW - Extremely late attacks during offense phase',
+  'TW - Severe inefficiency during offense phase',
   'RAID - Missed Raid',
+  'RAID - Scored Below Minimum Expected Score',
 ];
 
 export const strikeChoicesAutocomplete = async (interaction: AutocompleteInteraction) => {
@@ -89,4 +99,3 @@ export async function fetchAccountAutocompleteOptions(serverId: string) {
     return [];
   }
 }
-
