@@ -18,10 +18,10 @@ export const removeExpiredStrikes = async (server: Server): Promise<APIEmbed> =>
     const expiredStrikes = await processExpiredStrikes(activeStrikes, expiryDate);
     return buildExpiredStrikesEmbed(expiredStrikes);
   } catch (error) {
-    Logger.error({ error: error.message }, 'Error during strike reset');
+    Logger.error({ error: error }, 'Error during strike reset');
     return {
       title: 'Error During Strike Reset',
-      description: 'An error occurred while processing expired strikes. Please check the logs for details.',
+      description: `An error occurred while processing expired strikes. Error: ${error.message}`,
       color: 0xff0000, // Red color for error
       timestamp: new Date().toISOString(),
     };
@@ -93,26 +93,34 @@ const calculateExpiryDate = (server: Server): DateTime => {
 const processExpiredStrikes = async (activeStrikes: Strikes[], expiryDate: DateTime): Promise<Strikes[]> => {
   const expiredStrikes = [];
 
-  await Promise.all(
-    activeStrikes.map(async (strike) => {
-      const strikeDate = DateTime.fromJSDate(new Date(strike.createdAt));
-      Logger.info({ strikeId: strike.id, createdAt: strikeDate.toISO() }, 'Processing strike');
+  try {
+    await Promise.all(
+      activeStrikes.map(async (strike) => {
+        const strikeDate = DateTime.fromJSDate(new Date(strike.createdAt));
+        Logger.info({ strikeId: strike.id, createdAt: strikeDate.toISO() }, 'Processing strike');
 
-      if (strikeDate.toMillis() < expiryDate.toMillis()) {
-        Logger.info({ strikeId: strike.id, member: strike.memberId, creationDate: strike.createdAt }, 'Strike expired');
-        await strike.update({ active: false });
-        expiredStrikes.push({
-          member: strike.account.displayName,
-          reason: strike.reason,
-          createdAt: strikeDate.toFormat('yyyy-MM-dd'),
-        });
-      } else {
-        Logger.info({ strikeId: strike.id, member: strike.member.memberId }, 'Strike not expired');
-      }
-    }),
-  );
+        if (strikeDate.toMillis() < expiryDate.toMillis()) {
+          Logger.info(
+            { strikeId: strike.id, member: strike.memberId, creationDate: strike.createdAt },
+            'Strike expired',
+          );
+          await strike.update({ active: false });
+          expiredStrikes.push({
+            member: strike.account.displayName,
+            reason: strike.reason,
+            createdAt: strikeDate.toFormat('yyyy-MM-dd'),
+          });
+        } else {
+          Logger.info({ strikeId: strike.id, member: strike.member.memberId }, 'Strike not expired');
+        }
+      }),
+    );
 
-  return expiredStrikes;
+    return expiredStrikes;
+  } catch (error) {
+    Logger.error({ error: error }, 'Error processing expired strikes');
+    throw new Error(error);
+  }
 };
 
 /**
